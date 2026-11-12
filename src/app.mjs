@@ -374,11 +374,25 @@ $('propertyList').addEventListener('keydown', event => {
     event.preventDefault(); selectProperty(event.target.closest('.property-card').dataset.id);
   }
 });
-document.querySelectorAll('[data-amenity]').forEach(input => input.addEventListener('change', () => {
-  if (input.checked) state.amenities.add(input.dataset.amenity);
-  else state.amenities.delete(input.dataset.amenity);
-  renderCards(); renderPropertyMarkers();
-}));
+function applyAmenityFilters() {
+  state.amenities = new Set([...document.querySelectorAll('[data-amenity]:checked')].map(input => input.dataset.amenity));
+  const results = filtered();
+  if (state.selected && !results.some(property => property.id === state.selected.id)) {
+    state.selected = null;
+    state.version++;
+    state.activePois = [];
+    radiusLayer?.clearLayers();
+    renderPois();
+    scoreStatus(null);
+    $('selectedTitle').textContent = 'Descubra o bairro';
+    $('selectedSubtitle').textContent = 'Selecione um imóvel nos resultados filtrados.';
+    setStatus(results.length ? 'Selecione um imóvel para explorar a região' : 'Nenhum imóvel corresponde aos filtros');
+  }
+  renderCards();
+  renderPropertyMarkers();
+}
+document.querySelectorAll('[data-amenity]').forEach(input => input.addEventListener('change', applyAmenityFilters));
+window.addEventListener('pageshow', applyAmenityFilters);
 $('sortSelect').addEventListener('change', event => { state.sort = event.target.value; renderCards(); });
 $('calculateButton').addEventListener('click', () => calculateScore(state.selected));
 $('jsonInput').addEventListener('change', async event => {
