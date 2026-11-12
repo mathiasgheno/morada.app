@@ -1,5 +1,7 @@
 # Morada — Explorador de imóveis
 
+O mapa inclui as expansões cadastradas das linhas 2, 4, 6, 15 e 17, tracejadas. Cada linha pode ser ligada/desligada na legenda do mapa, incluindo seus trechos de expansão. A base classifica essas geometrias como `planned`, sem separar cada trecho em obra dos trechos futuros; por isso a interface usa “expansão prevista / em obras”. Projetos 19, 20 e 22 não são tratados como obras executadas.
+
 A Linha 6–Laranja também é incluída: geometria marcada como `partial` na fonte aparece com indicação de operação parcial; trechos `planned` aparecem tracejados como previstos/em obras. O traçado reflete a classificação da base geográfica, não confirma a abertura de cada estação. Referência sobre a entrega parcial: https://agenciabrasil.ebc.com.br/geral/noticia/2026-07/linha-6-laranja-do-metro-de-sp-inicia-operacao-nesta-sexta-feira.
 
 As linhas de metrô são servidas pelo Bun a partir de `metro.json`, sem consultar Overpass no navegador. O arquivo inclui seis linhas e 86 segmentos operacionais presentes no recorte da fonte (não inclui expansões planejadas). Fonte: https://github.com/roquerodrigo/transporte-sp, geometria da rede baseada em OpenStreetMap (ODbL). É um retrato dos dados da fonte, não uma indicação de funcionamento em tempo real. Para atualizar o arquivo, execute `bun run update:metro`; o download acontece apenas nessa atualização explícita.

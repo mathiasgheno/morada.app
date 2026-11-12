@@ -10,3 +10,4 @@
 .property-card:focus-visible{outline:3px solid #25996a;outline-offset:2px}
 .leaflet-metroPane-pane path.leaflet-interactive:focus{outline:none}.leaflet-metroPane-pane path.leaflet-interactive:focus-visible{stroke-width:7;stroke-opacity:1}
 .card-costs{font-size:10px;line-height:1.5;color:#708079;margin:5px 0 0}
+:root .map-legend{max-width:240px;max-height:min(300px,45%)}.legend-line input{accent-color:#15734e;margin:0;cursor:pointer}.legend-line{cursor:pointer}.metro-line-note{font-size:10px;line-height:1.4;margin:9px 0 0;color:#718179}

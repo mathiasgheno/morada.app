@@ -8,6 +8,7 @@ const state = {
   version: 0, metro: null, metroNetwork: null, activePois: [], metroVisible: true,
   visibleCategories: new Set(Object.keys(CATEGORIES)),
   amenities: new Set(),
+  hiddenMetroLines: new Set(),
 };
 let map, propertyLayer, poiLayer, metroLayer, radiusLayer, metroRenderer;
 const referencePoint = [-23.556866, -46.661231];
@@ -171,13 +172,15 @@ function renderMetro() {
   const legend = $('metroLegend');
   legend.hidden = !state.metroVisible || !metro?.lines?.length;
   if (!metro) return;
-  const unique = new Set();
-  $('metroLegendItems').innerHTML = metro.lines.filter(line => {
-    if (unique.has(line.label)) return false;
-    unique.add(line.label); return true;
-  }).slice(0, 18).map(line => `<div class="legend-line"><span class="line-swatch" style="background:${line.planned ? `repeating-linear-gradient(to right, ${escapeHtml(line.color)} 0 5px, transparent 5px 8px)` : escapeHtml(line.color)}"></span><span>${escapeHtml(line.label)}</span></div>`).join('');
+  const lines = new Map();
+  for (const line of metro.lines) {
+    const key = line.lineId || line.label;
+    if (!lines.has(key)) lines.set(key, line);
+  }
+  $('metroLegendItems').innerHTML = [...lines].map(([key, line]) => `<label class="legend-line"><input type="checkbox" data-metro-line="${escapeHtml(key)}" ${state.hiddenMetroLines.has(key) ? '' : 'checked'}><span class="line-swatch" style="background:${escapeHtml(line.color)}"></span><span>${escapeHtml(line.lineId ? `Linha ${line.lineId} – ${line.name}` : line.label)}</span></label>`).join('') + '<p class="metro-line-note">Contínuo: operação · Tracejado: expansão prevista / em obras</p>';
   if (!map || !state.metroVisible) return;
   for (const segment of metro.segments) {
+    if (state.hiddenMetroLines.has(segment.lineId || segment.label)) continue;
     L.polyline(segment.latlngs, { renderer: metroRenderer, pane: 'metroPane', color: segment.color, opacity: segment.planned ? .65 : .86, dashArray: segment.planned ? '8 7' : null, weight: 4.4, lineCap: 'round', interactive: true })
       .bindTooltip(escapeHtml(segment.label), { sticky: true }).addTo(metroLayer);
   }
@@ -410,6 +413,15 @@ $('refreshButton').addEventListener('click', () => {
   state.scores.delete(p.id);
   state.metros.delete(getMetroCacheKey(p));
   selectProperty(p.id);
+});
+$('metroLegendItems').addEventListener('change', event => {
+  const input = event.target.closest('[data-metro-line]');
+  if (!input) return;
+  const key = input.dataset.metroLine;
+  if (input.checked) state.hiddenMetroLines.delete(key);
+  else state.hiddenMetroLines.add(key);
+  renderMetro();
+  $('metroLegendItems').querySelector(`[data-metro-line="${CSS.escape(key)}"]`)?.focus({ preventScroll: true });
 });
 document.querySelectorAll('.filter-chip').forEach(chip => {
   chip.addEventListener('change', event => {
