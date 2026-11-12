@@ -13,15 +13,18 @@ const lines = new Map();
 const segments = [];
 for (const feature of network.features || []) {
   const properties = feature.properties || {};
-  if (properties.kind !== 'line' || properties.status !== 'operational' || !['subway', 'monorail', 'light_rail'].includes(properties.mode)) continue;
-  const label = `Linha ${properties.number} – ${properties.name}`;
+  const orange = properties.number === '6';
+  if (properties.kind !== 'line' || !(properties.status === 'operational' || (orange && ['partial', 'planned'].includes(properties.status))) || !['subway', 'monorail', 'light_rail'].includes(properties.mode)) continue;
+  const planned = properties.status === 'planned';
+  const suffix = planned ? ' (prevista / em obras)' : properties.status === 'partial' ? ' (operação parcial)' : '';
+  const label = `Linha ${properties.number} – ${properties.name}${suffix}`;
   const color = properties.colour;
   const geometry = feature.geometry;
   const paths = geometry.type === 'MultiLineString' ? geometry.coordinates : geometry.type === 'LineString' ? [geometry.coordinates] : [];
   for (const path of paths) {
     if (path.length < 2 || !path.every(point => Number.isFinite(point[0]) && Number.isFinite(point[1]))) continue;
-    segments.push({ label, color, latlngs: path.map(point => [point[1], point[0]]) });
-    lines.set(label, { label, color });
+    segments.push({ label, color, planned, latlngs: path.map(point => [point[1], point[0]]) });
+    lines.set(label, { label, color, planned });
   }
 }
 if (!segments.length) throw new Error('Nenhuma geometria de metrô válida; arquivo anterior preservado.');

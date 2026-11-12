@@ -174,10 +174,10 @@ function renderMetro() {
   $('metroLegendItems').innerHTML = metro.lines.filter(line => {
     if (unique.has(line.label)) return false;
     unique.add(line.label); return true;
-  }).slice(0, 18).map(line => `<div class="legend-line"><span class="line-swatch" style="background:${escapeHtml(line.color)}"></span><span>${escapeHtml(line.label)}</span></div>`).join('');
+  }).slice(0, 18).map(line => `<div class="legend-line"><span class="line-swatch" style="background:${line.planned ? `repeating-linear-gradient(to right, ${escapeHtml(line.color)} 0 5px, transparent 5px 8px)` : escapeHtml(line.color)}"></span><span>${escapeHtml(line.label)}</span></div>`).join('');
   if (!map || !state.metroVisible) return;
   for (const segment of metro.segments) {
-    L.polyline(segment.latlngs, { renderer: metroRenderer, pane: 'metroPane', color: segment.color, opacity: .86, weight: 4.4, lineCap: 'round', interactive: true })
+    L.polyline(segment.latlngs, { renderer: metroRenderer, pane: 'metroPane', color: segment.color, opacity: segment.planned ? .65 : .86, dashArray: segment.planned ? '8 7' : null, weight: 4.4, lineCap: 'round', interactive: true })
       .bindTooltip(escapeHtml(segment.label), { sticky: true }).addTo(metroLayer);
   }
 }
