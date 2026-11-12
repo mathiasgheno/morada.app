@@ -78,7 +78,7 @@ function renderPropertyMarkers(fitAll = false) {
     coords.push([property.coordinates.lat, property.coordinates.lng]);
     const selected = state.selected?.id === property.id;
     const marker = L.marker([property.coordinates.lat, property.coordinates.lng], { icon: pointIcon(property, selected), zIndexOffset: selected ? 1000 : 0 });
-    marker.bindPopup(`<div class="popup-title">${escapeHtml(property.title)}</div><div class="popup-sub">${escapeHtml(brl(property.price))} ${property.kind === 'Aluguel' ? '/mês' : ''}</div>`);
+    marker.bindPopup(`<div class="popup-title">${escapeHtml(property.title)}</div><div class="popup-sub">${property.total !== null ? 'Total: ' : ''}${escapeHtml(brl(property.total ?? property.price))} ${property.kind === 'Aluguel' ? '/mês' : ''}</div>`);
     marker.on('click', () => selectProperty(property.id, { focusCard: true }));
     marker.addTo(propertyLayer);
   }
@@ -107,7 +107,8 @@ function cardHtml(p) {
       <div class="card-details">
         <div class="card-kicker"><span class="card-type">${escapeHtml(p.propertyType.toUpperCase())}</span><span class="card-id">#${escapeHtml(p.id)}</span></div>
         <h3 class="card-title">${name}</h3><p class="card-address">${escapeHtml([p.street, p.city].filter(Boolean).join(' · ') || 'Endereço não informado')}</p>
-        <div class="card-price ${p.price === null ? 'card-price-muted' : ''}">${escapeHtml(brl(p.price))}${p.kind === 'Aluguel' ? '<small> /mês</small>' : ''}</div>
+        <div class="card-price ${p.total === null && p.price === null ? 'card-price-muted' : ''}">${escapeHtml(brl(p.total ?? p.price))}${p.kind === 'Aluguel' ? '<small> /mês</small>' : ''}</div>
+        <p class="card-costs">${p.total !== null ? 'Total mensal informado' : 'Total não informado'}${p.price !== null ? ` · Aluguel: ${escapeHtml(brl(p.price))}` : ''}${p.condo !== null ? ` · Condomínio: ${escapeHtml(brl(p.condo))}` : ''}</p>
       </div>
     </div>
     <div class="card-meta">

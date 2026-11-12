@@ -3,6 +3,15 @@ import assert from 'node:assert/strict';
 import { extractProperties, sortProperties, normalizeProperty, parseDate, toNumber, dateText } from '../src/data.mjs';
 import { haversineMeters, parsePois, categorize, parseMetro, calculateWalkability, poiQuery, metroQuery } from '../src/geo.mjs';
 
+test('Preserva total mensal e ordena pelo custo total em vez do aluguel', () => {
+  const first = normalizeProperty({ id: '1', rentValue: 2000, condominiumValue: 800, totalCost: 3000 });
+  const second = normalizeProperty({ id: '2', rentValue: 2300, totalCost: 2600 });
+  assert.equal(first.condo, 800);
+  assert.equal(first.total, 3000);
+  assert.equal(first.price, 2000);
+  assert.deepEqual(sortProperties([first, second]).map(property => property.id), ['2', '1']);
+});
+
 test('Lê formatos JSON array, encapsulado e objeto indexado por ID', () => {
   const raw = { id: '123', rentPrice: 1900, latitude: -23.5, longitude: -46.6 };
   assert.equal(extractProperties([raw]).length, 1);

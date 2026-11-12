@@ -136,7 +136,7 @@ export function normalizeProperty(raw, index = 0) {
   const generic = firstValidNumber(raw, ['price', 'value', 'valor', 'pricing.price', 'pricingInfo.price', 'prices.price']);
   const price = rent ?? sale ?? generic;
   const kind = rent !== null ? 'Aluguel' : sale !== null ? 'Venda' : 'Preço';
-  const condo = firstValidNumber(raw, ['condoFee', 'condominiumFee', 'condoPrice', 'condominiumPrice', 'condo', 'condominio', 'prices.condoFee', 'prices.condominium', 'pricingInfo.condoFee']);
+  const condo = firstValidNumber(raw, ['condominiumValue', 'condoFee', 'condominiumFee', 'condoPrice', 'condominiumPrice', 'condo', 'condominio', 'prices.condoFee', 'prices.condominium', 'pricingInfo.condoFee']);
   const total = firstValidNumber(raw, ['totalCost', 'totalPrice', 'rentTotalPrice', 'monthlyCost', 'prices.totalCost', 'pricingInfo.totalPrice', 'pricingInfo.rentTotalPrice']);
   const area = firstValidNumber(raw, ['area', 'areaM2', 'size', 'totalArea', 'usableArea', 'squareMeters', 'm2', 'areaUtil']);
   const bedrooms = firstValidNumber(raw, ['bedrooms', 'beds', 'rooms', 'bedroomCount', 'quartos']);
@@ -192,8 +192,8 @@ export function sortProperties(properties, sort = 'price-asc') {
   const descending = sort.endsWith('desc');
   const byDate = sort.startsWith('date');
   return [...properties].sort((a, b) => {
-    const av = byDate ? a.availableAt : a.price;
-    const bv = byDate ? b.availableAt : b.price;
+    const av = byDate ? a.availableAt : a.total ?? a.price;
+    const bv = byDate ? b.availableAt : b.total ?? b.price;
     if (av === null || av === undefined) return bv === null || bv === undefined ? a.id.localeCompare(b.id) : 1;
     if (bv === null || bv === undefined) return -1;
     if (av !== bv) return (av - bv) * (descending ? -1 : 1);
