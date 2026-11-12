@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "bun --watch server.ts",
+    "start": "bun server.ts",
+    "test": "node --test testes/projeto.test.mjs",
+    "update:metro": "bun atualizar-metro.mjs"
+  }
+}

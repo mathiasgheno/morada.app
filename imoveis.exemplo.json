@@ -1,0 +1,26 @@
+[
+  {
+    "id": "DEMO-01", "demo": true, "propertyType": "Apartamento", "neighborhood": "Vila Mariana", "street": "Localização aproximada para demonstração", "city": "São Paulo", "state": "SP", "latitude": -23.5896, "longitude": -46.6362,
+    "rentPrice": 3200, "condoFee": 650, "area": 51, "bedrooms": 2, "bathrooms": 1, "parkingSpots": 1, "availableFrom": "2026-12-01"
+  },
+  {
+    "id": "DEMO-02", "demo": true, "propertyType": "Studio", "neighborhood": "Consolação", "street": "Localização aproximada para demonstração", "city": "São Paulo", "state": "SP", "latitude": -23.5530, "longitude": -46.6596,
+    "rentPrice": 2750, "condoFee": 540, "area": 31, "bedrooms": 1, "bathrooms": 1, "parkingSpots": 0, "availableFrom": "2026-11-25"
+  },
+  {
+    "id": "DEMO-03", "demo": true, "propertyType": "Apartamento", "neighborhood": "Pinheiros", "street": "Localização aproximada para demonstração", "city": "São Paulo", "state": "SP", "latitude": -23.5666, "longitude": -46.7002,
+    "rentPrice": 4800, "condoFee": 980, "area": 67, "bedrooms": 2, "bathrooms": 2, "parkingSpots": 1, "availableFrom": "2027-01-10"
+  },
+  {
+    "id": "DEMO-04", "demo": true, "propertyType": "Apartamento", "neighborhood": "Bela Vista", "street": "Localização aproximada para demonstração", "city": "São Paulo", "state": "SP", "latitude": -23.5630, "longitude": -46.6515,
+    "rentPrice": 3900, "condoFee": 760, "area": 59, "bedrooms": 2, "bathrooms": 2, "parkingSpots": 0, "availabilityType": "IMMEDIATE"
+  },
+  {
+    "id": "DEMO-05", "demo": true, "propertyType": "Apartamento", "neighborhood": "Santa Cecília", "street": "Localização aproximada para demonstração", "city": "São Paulo", "state": "SP", "latitude": -23.5400, "longitude": -46.6555,
+    "rentPrice": 2300, "condoFee": 480, "area": 43, "bedrooms": 1, "bathrooms": 1, "parkingSpots": 0, "availableFrom": "2026-11-18"
+  },
+  {
+    "id": "DEMO-06", "demo": true, "propertyType": "Apartamento", "neighborhood": "Moema", "street": "Localização aproximada para demonstração", "city": "São Paulo", "state": "SP", "latitude": -23.6039, "longitude": -46.6634,
+    "rentPrice": 5300, "condoFee": 1150, "area": 74, "bedrooms": 3, "bathrooms": 2, "parkingSpots": 1, "availableFrom": "2026-12-20"
+  }
+]

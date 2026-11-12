@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="description" content="Compare imóveis, disponibilidade, mobilidade e serviços próximos em um mapa aberto." />
+    <title>Morada · Explorador de imóveis</title>
+    <link rel="preconnect" href="https://tile.openstreetmap.org" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="./style.css" />
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script defer src="https://unpkg.com/protomaps-leaflet@5.0.0/dist/protomaps-leaflet.js"></script>
+    <script type="module" src="./src/app.mjs"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <div class="app-content">
+        <aside class="sidebar" aria-label="Lista de imóveis">
+          <div class="sidebar-intro">
+            <div class="eyebrow">ENCONTRE SEU LUGAR</div>
+            <h1>O imóvel certo.<br /><em>O bairro também.</em></h1>
+            <p>Compare preços, datas e tudo o que importa a poucos passos de casa.</p>
+          </div>
+          <div class="data-notice" id="dataNotice" hidden role="status"></div>
+          <div class="controls">
+            <div class="amenity-filters" role="group" aria-label="Características do imóvel">
+              <label><input type="checkbox" data-amenity="acceptsPets"> Aceita pet</label>
+              <label><input type="checkbox" data-amenity="doorman24"> Portaria 24h</label>
+              <label><input type="checkbox" data-amenity="partyRoom"> Salão de festas</label>
+              <label><input type="checkbox" data-amenity="furnished"> Mobiliado</label>
+            </div>
+            <div class="sort-wrap"><label for="sortSelect">ORDENAR POR</label>
+              <select id="sortSelect">
+                <option value="price-asc">Menor preço primeiro</option>
+                <option value="price-desc">Maior preço primeiro</option>
+                <option value="date-asc">Disponibilidade mais próxima</option>
+                <option value="date-desc">Disponibilidade mais distante</option>
+              </select>
+            </div>
+            <div class="sidebar-toolbar">
+              <span id="listingCount">Carregando imóveis…</span>
+              <label class="upload-button" for="jsonInput" title="Importar um arquivo JSON do seu computador">↥ Importar JSON</label>
+              <input id="jsonInput" type="file" accept=".json,application/json" hidden />
+            </div>
+          </div>
+          <div id="propertyList" class="property-list" aria-live="polite"></div>
+          <footer class="sidebar-footer">Sem cadastro, sem chave de API, sem anúncios. Feito para comparar com calma.</footer>
+        </aside>
+
+        <div id="sidebarResize" class="sidebar-resize" role="separator" aria-label="Largura da lista de imóveis" aria-orientation="vertical" aria-valuemin="300" aria-valuemax="800" aria-valuenow="450" tabindex="0"></div>
+        <main class="workspace">
+          <div class="workspace-heading">
+            <div>
+              <div class="eyebrow map-eyebrow">EXPLORAR O ENTORNO</div>
+              <h2 id="selectedTitle">Descubra o bairro</h2>
+              <p id="selectedSubtitle">Selecione um imóvel para explorar o que existe ao redor.</p>
+            </div>
+            <a id="officialLink" href="https://www.walkscore.com/score/" target="_blank" rel="noopener noreferrer" class="official-link">Consultar Walk Score ↗</a>
+          </div>
+          <div class="map-container">
+            <button id="expandMap" class="expand-map" type="button" aria-label="Expandir mapa" aria-pressed="false">⛶ Expandir mapa</button>
+            <div class="availability-legend"><span style="--dot:#219565">Disponível</span><span style="--dot:#287be0">Amanhã</span><span style="--dot:#e5b526">Até 7 dias</span><span style="--dot:#92999f">Depois / sem data</span></div>
+            <div id="map" role="application" aria-label="Mapa interativo de imóveis, linhas de metrô e estabelecimentos próximos"></div>
+            <div class="map-corner-note" id="mapStatus" role="status">Preparando mapa…</div>
+            <div class="map-legend" id="metroLegend" hidden><strong>Linhas no mapa</strong><div id="metroLegendItems"></div></div>
+          </div>
+          <section class="explore-panel" aria-label="Serviços e caminhabilidade">
+            <div class="explore-topline">
+              <div><span class="eyebrow">POR PERTO</span><h3>O que tem ao redor?</h3><p>Estabelecimentos cadastrados no OpenStreetMap em até 500 m do imóvel, em linha reta.</p></div>
+              <button id="refreshButton" class="refresh-button" type="button">↻ Atualizar região</button>
+            </div>
+            <div class="filters" aria-label="Categorias exibidas no mapa">
+              <label class="filter-chip active" data-category="gym"><input checked type="checkbox" /> <span class="chip-icon gym">◕</span> Academias <span class="category-counter" data-count="gym">–</span></label>
+              <label class="filter-chip active" data-category="pharmacy"><input checked type="checkbox" /> <span class="chip-icon pharmacy">✚</span> Farmácias <span class="category-counter" data-count="pharmacy">–</span></label>
+              <label class="filter-chip active" data-category="market"><input checked type="checkbox" /> <span class="chip-icon market">▣</span> Mercados <span class="category-counter" data-count="market">–</span></label>
+              <label class="filter-chip active" data-category="park"><input checked type="checkbox" /> <span class="chip-icon park">♣</span> Parques <span class="category-counter" data-count="park">–</span></label>
+              <label class="filter-chip metro-chip active" data-category="metro"><input checked type="checkbox" /> <span class="chip-icon metro">Ⓜ</span> Metrô</label>
+            </div>
+            <div class="score-row">
+              <div class="score-icon">↟</div>
+              <div class="score-main"><strong>Índice de caminhabilidade</strong><p id="scoreDescription">Selecione um imóvel e clique em calcular para estimar sua caminhabilidade.</p></div>
+              <div id="scoreResult" class="score-result" aria-live="polite">—<small>/ 100</small></div>
+              <button id="calculateButton" type="button" class="primary-button" disabled>Calcular índice</button>
+            </div>
+            <div class="info-footer">
+              <span>ⓘ O índice é uma <strong>estimativa independente</strong>, não o Walk Score oficial. Usa distâncias em linha reta e quatro tipos de estabelecimentos.</span>
+              <details><summary>Como funciona?</summary><p>O índice combina o estabelecimento mais próximo de cada categoria: mercado (35%), parque (25%), farmácia (20%) e academia (20%). Até 300 m: nota máxima na categoria; de 300 m a 1,5 km: queda linear até zero. Não considera rotas a pé, segurança, calçadas ou inclinação. Dados ausentes podem reduzir o resultado. O Walk Score oficial utiliza metodologia própria e não oferece API aberta para imóveis no Brasil.</p></details>
+            </div>
+          </section>
+          <div class="attribution-note">Mapas © OpenStreetMap contributors · Dados geográficos: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap (ODbL)</a> · Consultas: Overpass API · Interface: Leaflet</div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>
