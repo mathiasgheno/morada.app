@@ -173,11 +173,17 @@ function renderMetro() {
   legend.hidden = !state.metroVisible || !metro?.lines?.length;
   if (!metro) return;
   const lines = new Map();
+  const expansions = new Set(metro.lines.filter(line => line.planned).map(line => line.lineId || line.label));
   for (const line of metro.lines) {
     const key = line.lineId || line.label;
     if (!lines.has(key)) lines.set(key, line);
   }
-  $('metroLegendItems').innerHTML = [...lines].map(([key, line]) => `<label class="legend-line"><input type="checkbox" data-metro-line="${escapeHtml(key)}" ${state.hiddenMetroLines.has(key) ? '' : 'checked'}><span class="line-swatch" style="background:${escapeHtml(line.color)}"></span><span>${escapeHtml(line.lineId ? `Linha ${line.lineId} – ${line.name}` : line.label)}</span></label>`).join('') + '<p class="metro-line-note">Contínuo: operação · Tracejado: expansão prevista / em obras</p>';
+  $('metroLegendItems').innerHTML = [...lines].map(([key, line]) => {
+    const hasExpansion = expansions.has(key);
+    const hasOperation = metro.lines.some(candidate => (candidate.lineId || candidate.label) === key && !candidate.planned);
+    const swatches = `${hasOperation ? `<span class="line-swatch" style="background:${escapeHtml(line.color)}" title="Trecho em operação"></span>` : ''}${hasExpansion ? `<span class="line-swatch line-swatch-dashed" style="--line-color:${escapeHtml(line.color)}" title="Expansão prevista / em obras"></span>` : ''}`;
+    return `<label class="legend-line"><input type="checkbox" data-metro-line="${escapeHtml(key)}" ${state.hiddenMetroLines.has(key) ? '' : 'checked'}><span class="line-swatches">${swatches}</span><span>${escapeHtml(line.lineId ? `Linha ${line.lineId} – ${line.name}` : line.label)}</span></label>`;
+  }).join('') + '<p class="metro-line-note">Contínuo: operação · Tracejado: expansão prevista / em obras</p>';
   if (!map || !state.metroVisible) return;
   for (const segment of metro.segments) {
     if (state.hiddenMetroLines.has(segment.lineId || segment.label)) continue;
