@@ -303,7 +303,10 @@ function selectProperty(id, options = {}) {
   if (map) {
     radiusLayer.clearLayers();
     if (property.coordinates) {
-      map.setView([property.coordinates.lat, property.coordinates.lng], 14, { animate: !options.initial });
+      map.panTo([property.coordinates.lat, property.coordinates.lng], {
+        animate: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+        duration: 0.6,
+      });
       L.circle([property.coordinates.lat, property.coordinates.lng], { radius: RADIUS_METERS, color: '#208755', weight: 1.3, dashArray: '5 5', fillColor: '#6ebf83', fillOpacity: .035, interactive: false }).addTo(radiusLayer);
     }
   }
