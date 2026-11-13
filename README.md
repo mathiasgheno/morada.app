@@ -1,5 +1,7 @@
 # Morada — Explorador de imóveis
 
+`bun run update:estabelecimentos` é incremental: ignora dados válidos para o raio e coordenadas atuais (inclusive resultados vazios). Use `bun run update:estabelecimentos --force` para refazer todos. A fila consulta um imóvel por vez, com intervalo de cinco segundos; cada sucesso é salvo imediatamente. Em HTTP 429, a fila inteira pausa conforme `Retry-After` (segundos ou data); sem esse cabeçalho, espera 60 s e aumenta exponencialmente até 15 minutos. O script mostra a porcentagem pendente, mantém o mesmo imóvel na fila e permite interromper com Ctrl+C. Falhas diferentes de 429 permanecem pendentes para a próxima execução.
+
 Estabelecimentos são consultados antecipadamente com `bun run update:estabelecimentos` e salvos em `nearbyEstablishments` de cada imóvel (raio de 350 m). A interface lê somente esses dados locais. O cadastro por ID também tenta carregar os estabelecimentos; falhas ficam registradas para atualização posterior. “Atualizar região” relê os dados carregados na página; após atualizar o arquivo pelo terminal, recarregue a página.
 
 `bun run update:videos` consulta as mídias de todos os imóveis com até cinco consultas simultâneas. Cada imóvel recebe `video` com `hasVideo` (true/false ou null se não confirmado), `items` (plataforma, ID, URL e estado de processamento), `checkedAt` e eventual `error`. Falhas preservam vídeos previamente conhecidos. Novos cadastros via `bun run add:imovel ID` consultam o vídeo automaticamente. O arquivo é gravado atomicamente, usando a mesma trava da inclusão por ID.
