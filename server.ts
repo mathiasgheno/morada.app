@@ -1,10 +1,15 @@
 import { resolve, sep } from 'node:path';
+import { verificarAnuncios } from './anuncios';
 
 const root = import.meta.dir;
 const server = Bun.serve({
   port: Number(process.env.PORT || 8000),
   async fetch(request) {
     const pathname = decodeURIComponent(new URL(request.url).pathname);
+    if (pathname === '/api/anuncios') {
+      try { return Response.json(await verificarAnuncios(), { headers: { 'Cache-Control': 'no-store' } }); }
+      catch { return Response.json({ error: 'Falha ao consultar anúncios' }, { status: 503 }); }
+    }
     const path = resolve(root, `.${pathname === '/' ? '/index.html' : pathname}`);
     if (!path.startsWith(root + sep) || pathname.split('/').some(part => part.startsWith('.'))) {
       return new Response('Forbidden', { status: 403 });

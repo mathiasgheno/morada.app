@@ -9,6 +9,7 @@ const state = {
   visibleCategories: new Set(Object.keys(CATEGORIES)),
   amenities: new Set(),
   hiddenMetroLines: new Set(),
+  listings: {},
 };
 let map, propertyLayer, poiLayer, metroLayer, radiusLayer, metroRenderer;
 const referencePoint = [-23.556866, -46.661231];
@@ -91,6 +92,7 @@ function renderPropertyMarkers(fitAll = false) {
 function filtered() {
   const search = state.query.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   return sortProperties(state.properties.filter(p => {
+    if ($('activeListingsOnly').checked && state.listings[p.id]?.status !== 'active') return false;
     if (![...state.amenities].every(key => p[key])) return false;
     const text = [p.id, p.title, p.street, p.neighborhood, p.city, p.state].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return text.includes(search);
@@ -106,7 +108,7 @@ function cardHtml(p) {
     <div class="card-main" data-action="select" tabindex="0" role="button" aria-label="Exibir ${name} no mapa">
       <div class="card-photo"><span>⌂</span>${photo}${p.demo ? '<span class="card-demo">EXEMPLO</span>' : ''}</div>
       <div class="card-details">
-        <div class="card-kicker"><span class="card-type">${escapeHtml(p.propertyType.toUpperCase())}</span><span class="card-id">#${escapeHtml(p.id)}</span></div>
+        <div class="card-kicker"><span class="card-type">${escapeHtml(p.propertyType.toUpperCase())}</span><span class="card-id">${listingDot(p.id)} #${escapeHtml(p.id)}</span></div>
         <h3 class="card-title">${name}</h3><p class="card-address">${escapeHtml([p.street, p.city].filter(Boolean).join(' · ') || 'Endereço não informado')}</p>
         <div class="card-price ${p.total === null && p.price === null ? 'card-price-muted' : ''}">${escapeHtml(brl(p.total ?? p.price))}${p.kind === 'Aluguel' ? '<small> /mês</small>' : ''}</div>
         <p class="card-costs">${p.total !== null ? 'Total mensal informado' : 'Total não informado'}${p.price !== null ? ` · Aluguel: ${escapeHtml(brl(p.price))}` : ''}${p.condo !== null ? ` · Condomínio: ${escapeHtml(brl(p.condo))}` : ''}</p>
@@ -122,6 +124,23 @@ function cardHtml(p) {
     <div class="card-availability"><span>◷ Disponibilidade</span><strong>${escapeHtml(dateText(p))}</strong></div>
     <div class="card-actions"><button type="button" data-action="select">Ver no mapa</button><button type="button" class="action-score" data-action="score" ${!p.coordinates ? 'disabled title="Coordenadas não disponíveis"' : ''}>Calcular índice ↗</button>${safeLink(p.url) ? `<a class="listing-link" href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" title="Abrir anúncio no QuintoAndar" aria-label="Abrir anúncio no QuintoAndar">Anúncio ↗</a>` : ''}</div>
   </article>`;
+}
+function listingDot(id) {
+  const result = state.listings[id];
+  const label = result?.status === 'active' ? 'Anúncio acessível' : result?.status === 'inactive' ? 'Anúncio indisponível (404/410)' : 'Disponibilidade do anúncio não confirmada';
+  const title = `${label}${result?.checkedAt ? ` · Verificado às ${new Date(result.checkedAt).toLocaleTimeString('pt-BR')}` : ''}`;
+  return `<span class="listing-status ${result?.status || 'unknown'}" role="img" aria-label="${escapeHtml(title)}" title="${escapeHtml(title)}"></span>`;
+}
+let checkingListings = false;
+async function refreshListings() {
+  if (checkingListings || document.hidden) return;
+  checkingListings = true;
+  try {
+    const response = await fetch('/api/anuncios', { signal: AbortSignal.timeout(120000) });
+    if (!response.ok) return;
+    state.listings = await response.json();
+    applyAmenityFilters();
+  } catch {} finally { checkingListings = false; }
 }
 function renderCards() {
   const results = filtered();
@@ -309,6 +328,7 @@ async function calculateScore(property) {
 function loadData(json, sourceLabel = 'arquivo') {
   const properties = extractProperties(json);
   state.properties = properties;
+  refreshListings();
   state.pois.clear(); state.scores.clear(); state.metros.clear(); state.poisPromises.clear();
   state.selected = null;
   state.version++;
@@ -403,6 +423,9 @@ function applyAmenityFilters() {
 }
 document.querySelectorAll('[data-amenity]').forEach(input => input.addEventListener('change', applyAmenityFilters));
 window.addEventListener('pageshow', applyAmenityFilters);
+$('activeListingsOnly').addEventListener('change', applyAmenityFilters);
+setInterval(refreshListings, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshListings(); });
 $('sortSelect').addEventListener('change', event => { state.sort = event.target.value; renderCards(); });
 $('calculateButton').addEventListener('click', () => calculateScore(state.selected));
 $('jsonInput').addEventListener('change', async event => {
