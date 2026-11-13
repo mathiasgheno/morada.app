@@ -213,7 +213,7 @@ function renderMetro() {
   if (!map || !state.metroVisible) return;
   for (const segment of metro.segments) {
     if (state.hiddenMetroLines.has(segment.lineId || segment.label)) continue;
-    L.polyline(segment.latlngs, { renderer: metroRenderer, pane: 'metroPane', color: segment.color, opacity: segment.planned ? .65 : .86, dashArray: segment.planned ? '8 7' : null, weight: 4.4, lineCap: 'round', interactive: true })
+    L.polyline(segment.latlngs, { className: 'metro-route', renderer: metroRenderer, pane: 'metroPane', color: segment.color, opacity: segment.planned ? .65 : .86, dashArray: segment.planned ? '8 7' : null, weight: 4.4, lineCap: 'round', interactive: true })
       .bindTooltip(escapeHtml(segment.label), { sticky: true }).addTo(metroLayer);
   }
 }
