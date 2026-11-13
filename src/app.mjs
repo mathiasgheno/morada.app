@@ -119,6 +119,7 @@ function cardHtml(p) {
         <p class="card-costs">${p.total !== null ? 'Total mensal informado' : 'Total não informado'}${p.price !== null ? ` · Aluguel: ${escapeHtml(brl(p.price))}` : ''}${p.condo !== null ? ` · Condomínio: ${escapeHtml(brl(p.condo))}` : ''}</p>
       </div>
     </div>
+    ${propertyVideo(p) ? '<button type="button" class="card-video" data-action="video">▶ Vídeo</button>' : ''}
     <div class="card-meta">
       ${p.area !== null ? `<span>▤ ${escapeHtml(p.area)} m²</span>` : ''}
       ${p.bedrooms !== null ? `<span>◻ ${escapeHtml(p.bedrooms)} quarto(s)</span>` : ''}
@@ -130,6 +131,38 @@ function cardHtml(p) {
     <div class="card-actions"><button type="button" data-action="select">Ver no mapa</button><button type="button" class="action-score" data-action="score" ${!p.coordinates ? 'disabled title="Coordenadas não disponíveis"' : ''}>Calcular índice ↗</button>${safeLink(p.url) ? `<a class="listing-link" href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" title="Abrir anúncio no QuintoAndar" aria-label="Abrir anúncio no QuintoAndar">Anúncio ↗</a>` : ''}</div>
   </article>`;
 }
+function propertyVideo(property) {
+  return property.raw.video?.items?.find(item => item.provider === 'VIMEO' && item.status === 'transcode_complete' && /^\d+(\/[a-zA-Z0-9]+)?$/.test(item.sourceId));
+}
+const videoDialog = $('videoDialog');
+let videoPropertyId;
+function openVideo(property) {
+  const video = propertyVideo(property);
+  if (!video) return;
+  const [id, hash] = video.sourceId.split('/');
+  const url = new URL(`https://player.vimeo.com/video/${id}`);
+  if (hash) url.searchParams.set('h', hash);
+  url.searchParams.set('dnt', '1');
+  const iframe = document.createElement('iframe');
+  iframe.src = url.href;
+  iframe.title = `Vídeo de ${property.title}`;
+  iframe.allow = 'fullscreen; picture-in-picture';
+  iframe.allowFullscreen = true;
+  $('videoTitle').textContent = `Vídeo · ${property.title}`;
+  $('videoExternal').href = `https://vimeo.com/${video.sourceId}`;
+  $('videoPlayer').replaceChildren(iframe);
+  videoPropertyId = property.id;
+  videoDialog.showModal();
+}
+$('closeVideo').addEventListener('click', () => videoDialog.close());
+videoDialog.addEventListener('click', event => {
+  const bounds = videoDialog.getBoundingClientRect();
+  if (event.target === videoDialog && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) videoDialog.close();
+});
+videoDialog.addEventListener('close', () => {
+  $('videoPlayer').replaceChildren();
+  $('propertyList').querySelector(`[data-id="${CSS.escape(videoPropertyId)}"] [data-action="video"]`)?.focus({ preventScroll: true });
+});
 function listingDot(id) {
   const result = state.listings[id];
   const label = result?.status === 'active' ? 'Anúncio acessível' : result?.status === 'inactive' ? 'Anúncio indisponível (404/410)' : 'Disponibilidade do anúncio não confirmada';
@@ -401,6 +434,10 @@ $('propertyList').addEventListener('click', event => {
   const card = event.target.closest('.property-card');
   if (!button || !card) return;
   const id = card.dataset.id;
+  if (button.dataset.action === 'video') {
+    openVideo(state.properties.find(property => property.id === id));
+    return;
+  }
   if (button.dataset.action.startsWith('photo-')) {
     const property = state.properties.find(p => p.id === id);
     const next = ((state.photos.get(id) || 0) + (button.dataset.action === 'photo-next' ? 1 : -1) + property.images.length) % property.images.length;
