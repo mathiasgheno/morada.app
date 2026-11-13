@@ -1,5 +1,6 @@
 import { readFile, writeFile, rename, unlink } from 'node:fs/promises';
 import { consultarVideo, videoFailure } from './videos.mjs';
+import { consultarEstabelecimentos } from './estabelecimentos.mjs';
 
 const id = process.argv[2];
 const file = new URL('./imoveis.json', import.meta.url);
@@ -32,6 +33,11 @@ try {
       throw new Error('Resposta sem dados reconhecíveis de imóvel; lista preservada.');
     }
     const property = { ...data, id: Number(id) };
+    try { [property.nearbyEstablishments] = await consultarEstabelecimentos([property]); }
+    catch (error) {
+      property.nearbyEstablishments = { radius: 350, items: [], checkedAt: null, error: error.message };
+      console.warn(`Estabelecimentos não confirmados: ${error.message}`);
+    }
     try { property.video = await consultarVideo(id); }
     catch (error) {
       property.video = videoFailure(null, error);

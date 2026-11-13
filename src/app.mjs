@@ -258,17 +258,10 @@ function getMetroCacheKey(property) {
   return `${Math.round(property.coordinates.lat * 100) / 100}:${Math.round(property.coordinates.lng * 100) / 100}`;
 }
 async function getPois(property) {
-  if (state.pois.has(property.id)) return state.pois.get(property.id);
-  if (state.poisPromises.has(property.id)) return state.poisPromises.get(property.id);
-  const promise = (async () => {
-    const elements = await runOverpass(poiQuery(property.coordinates), () => state.selected?.id === property.id);
-    if (elements === null) return null;
-    const pois = parsePois(elements);
-    state.pois.set(property.id, pois);
-    return pois;
-  })();
-  state.poisPromises.set(property.id, promise);
-  try { return await promise; } finally { state.poisPromises.delete(property.id); }
+  const local = property.raw.nearbyEstablishments;
+  if (!local?.checkedAt || local.error || local.radius !== RADIUS_METERS) throw new Error('Execute bun run update:estabelecimentos para atualizar os dados locais.');
+  state.pois.set(property.id, local.items);
+  return local.items;
 }
 async function getMetro(property) {
   return state.metroNetwork;
@@ -279,7 +272,7 @@ async function loadNeighborhood(property, token) {
     return;
   }
   try {
-    setStatus('Buscando estabelecimentos próximos…', true);
+    setStatus('Carregando estabelecimentos locais…', true);
     const pois = await getPois(property);
     if (token !== state.version || pois === null) return;
     state.activePois = pois;
@@ -287,8 +280,9 @@ async function loadNeighborhood(property, token) {
     setStatus(`${pois.length} pontos de interesse próximos · Consultando linhas de metrô…`, true);
   } catch (error) {
     if (token !== state.version) return;
-    setStatus('Não foi possível consultar os estabelecimentos. Use “Atualizar região”.');
-    $('scoreDescription').textContent = `Serviço Overpass temporariamente indisponível: ${error.message}`;
+    setStatus('Estabelecimentos locais ainda não disponíveis para este imóvel.');
+    $('scoreDescription').textContent = error.message;
+    return;
   }
   if (token !== state.version) return;
   try {

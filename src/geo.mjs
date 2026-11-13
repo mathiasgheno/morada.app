@@ -9,7 +9,7 @@ export const CATEGORIES = {
   market: { label: 'Mercados', weight: 0.35, glyph: '▣' },
   park: { label: 'Parques', weight: 0.25, glyph: '♣' },
 };
-export const RADIUS_METERS = 500;
+export const RADIUS_METERS = 350;
 
 export function haversineMeters(a, b) {
   const p1 = a.lat * Math.PI / 180, p2 = b.lat * Math.PI / 180;
