@@ -28,5 +28,12 @@ for (const feature of network.features || []) {
   }
 }
 if (!segments.length) throw new Error('Nenhuma geometria de metrô válida; arquivo anterior preservado.');
-await writeFile(new URL('./metro.json', import.meta.url), JSON.stringify({ source, updatedAt: new Date().toISOString(), lines: [...lines.values()], segments }));
+const lineIds = new Set([...lines.values()].map(line => line.lineId));
+const stations = (network.features || []).filter(feature => feature.properties?.kind === 'station' && feature.geometry?.type === 'Point')
+  .map(feature => ({ id: feature.properties.id, name: feature.properties.name, planned: feature.properties.status === 'planned',
+    lineIds: (feature.properties.lines || []).map(id => id.replace(/^linha-/, '')).filter(id => lineIds.has(id)),
+    latlng: [feature.geometry.coordinates[1], feature.geometry.coordinates[0]] }))
+  .filter(station => station.lineIds.length && station.latlng.every(Number.isFinite));
+await writeFile(new URL('./metro.json', import.meta.url), JSON.stringify({ source, updatedAt: new Date().toISOString(), lines: [...lines.values()], segments, stations }));
+console.log(`${stations.length} estações salvas.`);
 console.log(`${lines.size} linhas e ${segments.length} segmentos salvos em metro.json`);

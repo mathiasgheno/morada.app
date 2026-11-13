@@ -253,6 +253,20 @@ function renderMetro() {
     L.polyline(segment.latlngs, { className: 'metro-route', renderer: metroRenderer, pane: 'metroPane', color: segment.color, opacity: segment.planned ? .65 : .86, dashArray: segment.planned ? '8 7' : null, weight: 4.4, lineCap: 'round', interactive: true })
       .bindTooltip(escapeHtml(segment.label), { sticky: true }).addTo(metroLayer);
   }
+  for (const station of metro.stations || []) {
+    const visibleLines = station.lineIds.filter(id => !state.hiddenMetroLines.has(id));
+    if (!visibleLines.length) continue;
+    visibleLines.forEach((id, index) => {
+      const line = metro.lines.find(line => line.lineId === id);
+      L.circleMarker(station.latlng, {
+        className: 'metro-route metro-station', renderer: metroRenderer, pane: 'metroPane',
+        radius: 5 + (visibleLines.length - index - 1) * 3, weight: 2.5,
+        color: line.color, fillColor: '#fff', fillOpacity: station.planned ? .8 : 1,
+        dashArray: station.planned ? '2 2' : null,
+      }).bindTooltip(`${escapeHtml(station.name)}${station.planned ? ' · Prevista / em obras' : ''}<br>Linhas ${visibleLines.map(escapeHtml).join(', ')}`)
+        .addTo(metroLayer);
+    });
+  }
 }
 function getMetroCacheKey(property) {
   return `${Math.round(property.coordinates.lat * 100) / 100}:${Math.round(property.coordinates.lng * 100) / 100}`;
