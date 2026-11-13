@@ -1,4 +1,5 @@
 import { readFile, writeFile, rename, unlink } from 'node:fs/promises';
+import { consultarVideo, videoFailure } from './videos.mjs';
 
 const id = process.argv[2];
 const file = new URL('./imoveis.json', import.meta.url);
@@ -31,6 +32,11 @@ try {
       throw new Error('Resposta sem dados reconhecíveis de imóvel; lista preservada.');
     }
     const property = { ...data, id: Number(id) };
+    try { property.video = await consultarVideo(id); }
+    catch (error) {
+      property.video = videoFailure(null, error);
+      console.warn(`Imóvel será adicionado, mas o vídeo não foi confirmado: ${error.message}`);
+    }
     await writeFile(temporary, JSON.stringify([...properties, property], null, 2) + '\n', { flag: 'wx' });
     await rename(temporary, file);
     console.log(`Imóvel ${id} adicionado. Recarregue a página.`);

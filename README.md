@@ -1,5 +1,7 @@
 # Morada — Explorador de imóveis
 
+`bun run update:videos` consulta as mídias de todos os imóveis com até cinco consultas simultâneas. Cada imóvel recebe `video` com `hasVideo` (true/false ou null se não confirmado), `items` (plataforma, ID, URL e estado de processamento), `checkedAt` e eventual `error`. Falhas preservam vídeos previamente conhecidos. Novos cadastros via `bun run add:imovel ID` consultam o vídeo automaticamente. O arquivo é gravado atomicamente, usando a mesma trava da inclusão por ID.
+
 Para incluir um imóvel pelo ID completo: `bun run add:imovel 893877048`. Consulta o QuintoAndar e acrescenta os dados em `imoveis.json`, preservando os demais imóveis. IDs já cadastrados não são consultados nem alterados. Falhas de rede ou respostas inválidas preservam a lista. Recarregue a interface após a inclusão. O comando `gerar-imoveis.js` substitui a lista inteira; use o novo comando para inclusões individuais.
 
 O mapa inclui as expansões cadastradas das linhas 2, 4, 6, 15 e 17, tracejadas. Cada linha pode ser ligada/desligada na legenda do mapa, incluindo seus trechos de expansão. A base classifica essas geometrias como `planned`, sem separar cada trecho em obra dos trechos futuros; por isso a interface usa “expansão prevista / em obras”. Projetos 19, 20 e 22 não são tratados como obras executadas.

@@ -5,6 +5,7 @@
     "start": "bun server.ts",
     "test": "node --test testes/projeto.test.mjs",
     "update:metro": "bun atualizar-metro.mjs",
-    "add:imovel": "bun adicionar-imovel.mjs"
+    "add:imovel": "bun adicionar-imovel.mjs",
+    "update:videos": "bun atualizar-videos.mjs"
   }
 }
