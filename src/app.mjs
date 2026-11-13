@@ -1,5 +1,5 @@
 import { extractProperties, sortProperties, dateText, brl, availabilityColor } from './data.mjs';
-import { CATEGORIES, RADIUS_METERS, poiQuery, metroQuery, metroFallbackQuery, runOverpass, parsePois, parseMetro, calculateWalkability, distanceText } from './geo.mjs';
+import { CATEGORIES, RADIUS_METERS, calculateWalkability, distanceText } from './geo.mjs';
 
 const $ = id => document.getElementById(id);
 const state = {
@@ -263,37 +263,25 @@ async function getPois(property) {
   state.pois.set(property.id, local.items);
   return local.items;
 }
-async function getMetro(property) {
-  return state.metroNetwork;
-}
-async function loadNeighborhood(property, token) {
+function loadNeighborhood(property, token) {
   if (!property.coordinates) {
     setStatus('Coordenadas ausentes no JSON deste imóvel');
     return;
   }
   try {
-    setStatus('Carregando estabelecimentos locais…', true);
-    const pois = await getPois(property);
-    if (token !== state.version || pois === null) return;
+    const local = property.raw.nearbyEstablishments;
+    if (!local?.checkedAt || local.error || local.radius !== RADIUS_METERS || !Array.isArray(local.items)) throw new Error('Atualize o JSON com bun run update:estabelecimentos e recarregue a página.');
+    const pois = local.items;
+    if (token !== state.version) return;
+    state.pois.set(property.id, pois);
     state.activePois = pois;
     renderPois();
-    setStatus(`${pois.length} pontos de interesse próximos · Consultando linhas de metrô…`, true);
+    setStatus(`${pois.length} estabelecimentos em até ${RADIUS_METERS} m · Dados locais do JSON`);
   } catch (error) {
     if (token !== state.version) return;
     setStatus('Estabelecimentos locais ainda não disponíveis para este imóvel.');
     $('scoreDescription').textContent = error.message;
     return;
-  }
-  if (token !== state.version) return;
-  try {
-    const metro = await getMetro(property);
-    if (token !== state.version || metro === null) return;
-    state.metro = metro;
-    renderMetro();
-    setStatus(`${state.activePois.length} estabelecimentos · ${metro.lines.length} linhas/rotas de metrô mapeadas`);
-  } catch (error) {
-    if (token !== state.version) return;
-    setStatus(`${state.activePois.length} estabelecimentos · Metrô indisponível nesta consulta`);
   }
 }
 function officialScoreUrl(p) {
