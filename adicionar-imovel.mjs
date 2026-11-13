@@ -1,15 +1,17 @@
 import { readFile, writeFile, rename, unlink } from 'node:fs/promises';
 import { consultarVideo, videoFailure } from './videos.mjs';
 import { consultarEstabelecimentos } from './estabelecimentos.mjs';
+import { adquirirTrava } from './arquivo-lock.mjs';
 
 const id = process.argv[2];
 const file = new URL('./imoveis.json', import.meta.url);
 const lock = new URL('./imoveis.json.lock', import.meta.url);
 const temporary = new URL('./imoveis.json.tmp', import.meta.url);
 let locked = false;
+let release;
 try {
   if (!/^\d{7,12}$/.test(id || '')) throw new Error('Informe o ID completo: bun run add:imovel 893877048');
-  await writeFile(lock, '', { flag: 'wx' });
+  release = adquirirTrava(lock);
   locked = true;
   let properties;
   try { properties = JSON.parse(await readFile(file, 'utf8')); }
@@ -53,6 +55,6 @@ try {
 } finally {
   if (locked) {
     await unlink(temporary).catch(() => {});
-    await unlink(lock);
+    release();
   }
 }

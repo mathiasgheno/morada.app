@@ -1,13 +1,15 @@
 import { readFile, writeFile, rename, unlink } from 'node:fs/promises';
 import { consultarEstabelecimentos, dadosLocaisValidos, retryDelay } from './estabelecimentos.mjs';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { adquirirTrava } from './arquivo-lock.mjs';
 
 const file = new URL('./imoveis.json', import.meta.url);
 const lock = new URL('./imoveis.json.lock', import.meta.url);
 const temporary = new URL('./imoveis.json.tmp', import.meta.url);
 let locked = false;
+let release;
 try {
-  await writeFile(lock, '', { flag: 'wx' });
+  release = adquirirTrava(lock);
   locked = true;
   const properties = JSON.parse(await readFile(file, 'utf8'));
   if (!Array.isArray(properties)) throw new Error('Formato inválido');
@@ -53,5 +55,5 @@ try {
   if (failures) process.exitCode = 1;
 } catch (error) { console.error(error.message); process.exitCode = 1; }
 finally {
-  if (locked) { await unlink(temporary).catch(() => {}); await unlink(lock); }
+  if (locked) { await unlink(temporary).catch(() => {}); release(); }
 }

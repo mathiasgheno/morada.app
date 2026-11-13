@@ -1,12 +1,14 @@
 import { readFile, writeFile, rename, unlink } from 'node:fs/promises';
 import { consultarVideo, videoFailure } from './videos.mjs';
+import { adquirirTrava } from './arquivo-lock.mjs';
 
 const file = new URL('./imoveis.json', import.meta.url);
 const lock = new URL('./imoveis.json.lock', import.meta.url);
 const temporary = new URL('./imoveis.json.tmp', import.meta.url);
 let locked = false;
+let release;
 try {
-  await writeFile(lock, '', { flag: 'wx' });
+  release = adquirirTrava(lock);
   locked = true;
   const properties = JSON.parse(await readFile(file, 'utf8'));
   if (!Array.isArray(properties)) throw new Error('imoveis.json precisa conter uma lista');
@@ -34,6 +36,6 @@ try {
 } finally {
   if (locked) {
     await unlink(temporary).catch(() => {});
-    await unlink(lock);
+    release();
   }
 }
