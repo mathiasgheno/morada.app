@@ -23,8 +23,14 @@ try {
       headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(30000),
     });
     if (!response.ok) throw new Error(`QuintoAndar respondeu HTTP ${response.status}.`);
-    const property = await response.json();
-    if (!property || typeof property !== 'object' || Array.isArray(property) || String(property.id) !== id) throw new Error('Resposta sem o ID solicitado.');
+    const data = await response.json();
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Resposta inválida do QuintoAndar; lista preservada.');
+    const returnedId = data.id ?? data.propertyId ?? data.code;
+    if (returnedId != null && String(returnedId) !== id) throw new Error(`Resposta para outro imóvel (${returnedId}); lista preservada.`);
+    if (returnedId == null && !(Number.isFinite(data.lat) && Number.isFinite(data.lng) && (data.address || data.neighborhood) && ('rentValue' in data || 'salePrice' in data))) {
+      throw new Error('Resposta sem dados reconhecíveis de imóvel; lista preservada.');
+    }
+    const property = { ...data, id: Number(id) };
     await writeFile(temporary, JSON.stringify([...properties, property], null, 2) + '\n', { flag: 'wx' });
     await rename(temporary, file);
     console.log(`Imóvel ${id} adicionado. Recarregue a página.`);
