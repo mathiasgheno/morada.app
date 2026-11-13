@@ -41,7 +41,6 @@
             </div>
             <div class="sidebar-toolbar">
               <span id="listingCount">Carregando imóveis…</span>
-              <label class="upload-button" for="jsonInput" title="Importar um arquivo JSON do seu computador">↥ Importar JSON</label>
               <input id="jsonInput" type="file" accept=".json,application/json" hidden />
             </div>
           </div>
@@ -51,13 +50,12 @@
 
         <div id="sidebarResize" class="sidebar-resize" role="separator" aria-label="Largura da lista de imóveis" aria-orientation="vertical" aria-valuemin="300" aria-valuemax="800" aria-valuenow="450" tabindex="0"></div>
         <main class="workspace">
-          <div class="workspace-heading">
+          <div class="workspace-heading" hidden>
             <div>
               <div class="eyebrow map-eyebrow">EXPLORAR O ENTORNO</div>
               <h2 id="selectedTitle">Descubra o bairro</h2>
               <p id="selectedSubtitle">Selecione um imóvel para explorar o que existe ao redor.</p>
             </div>
-            <a id="officialLink" href="https://www.walkscore.com/score/" target="_blank" rel="noopener noreferrer" class="official-link">Consultar Walk Score ↗</a>
           </div>
           <div class="map-container">
             <button id="expandMap" class="expand-map" type="button" aria-label="Expandir mapa" aria-pressed="false">⛶ Expandir mapa</button>
@@ -69,7 +67,10 @@
           <section class="explore-panel" aria-label="Serviços e caminhabilidade">
             <div class="explore-topline">
               <div><span class="eyebrow">POR PERTO</span><h3>O que tem ao redor?</h3><p>Estabelecimentos cadastrados no OpenStreetMap em até 500 m do imóvel, em linha reta.</p></div>
-              <button id="refreshButton" class="refresh-button" type="button">↻ Atualizar região</button>
+              <div class="region-actions">
+                <a id="officialLink" href="https://www.walkscore.com/score/" target="_blank" rel="noopener noreferrer" class="official-link">Consultar Walk Score ↗</a>
+                <button id="refreshButton" class="refresh-button" type="button">↻ Atualizar região</button>
+              </div>
             </div>
             <div class="filters" aria-label="Categorias exibidas no mapa">
               <label class="filter-chip active" data-category="gym"><input checked type="checkbox" /> <span class="chip-icon gym">◕</span> Academias <span class="category-counter" data-count="gym">–</span></label>
