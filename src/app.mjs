@@ -74,7 +74,7 @@ function pointIcon(property, selected = false) {
 function renderPropertyMarkers(fitAll = false) {
   if (!map) return;
   propertyLayer.clearLayers();
-  const coords = [referencePoint];
+  const coords = [];
   for (const property of filtered()) {
     if (!property.coordinates) continue;
     coords.push([property.coordinates.lat, property.coordinates.lng]);
@@ -85,8 +85,13 @@ function renderPropertyMarkers(fitAll = false) {
     marker.addTo(propertyLayer);
   }
   if (fitAll && coords.length) {
-    const bounds = L.latLngBounds(coords);
-    map.fitBounds(bounds, { padding: [40, 40], maxZoom: coords.length === 1 ? 14 : 12, animate: false });
+    const median = values => [...values].sort((first, second) => first - second)[Math.floor(values.length / 2)];
+    const center = L.latLng(median(coords.map(point => point[0])), median(coords.map(point => point[1])));
+    const concentrated = [...coords].sort((first, second) => center.distanceTo(first) - center.distanceTo(second))
+      .slice(0, Math.max(1, Math.ceil(coords.length * 0.8)));
+    const bounds = L.latLngBounds([...concentrated, referencePoint]);
+    map.invalidateSize({ pan: false });
+    map.fitBounds(bounds, { paddingTopLeft: [55, 55], paddingBottomRight: [55, 65], maxZoom: 15, animate: false });
   }
 }
 function filtered() {
