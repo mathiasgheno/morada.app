@@ -1,5 +1,5 @@
 import { resolve, sep } from 'node:path';
-import { verificarAnuncios } from './anuncios';
+import { verificarAnuncios, estadoAnuncios } from './anuncios';
 
 const root = import.meta.dir;
 const server = Bun.serve({
@@ -7,7 +7,10 @@ const server = Bun.serve({
   async fetch(request) {
     const pathname = decodeURIComponent(new URL(request.url).pathname);
     if (pathname === '/api/anuncios') {
-      try { return Response.json(await verificarAnuncios(), { headers: { 'Cache-Control': 'no-store' } }); }
+      try {
+        void verificarAnuncios().catch(error => console.error('Verificação de anúncios:', error.message));
+        return Response.json(estadoAnuncios(), { headers: { 'Cache-Control': 'no-store' } });
+      }
       catch { return Response.json({ error: 'Falha ao consultar anúncios' }, { status: 503 }); }
     }
     const path = resolve(root, `.${pathname === '/' ? '/index.html' : pathname}`);

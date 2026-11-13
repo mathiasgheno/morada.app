@@ -1,5 +1,8 @@
 const cache = new Map<string, { status: string; checkedAt: number }>();
 let pending: Promise<unknown> | null = null;
+export function estadoAnuncios() {
+  return { listings: Object.fromEntries(cache), checking: pending !== null };
+}
 
 export async function verificarAnuncios() {
   if (pending) return pending;

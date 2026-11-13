@@ -132,15 +132,22 @@ function listingDot(id) {
   return `<span class="listing-status ${result?.status || 'unknown'}" role="img" aria-label="${escapeHtml(title)}" title="${escapeHtml(title)}"></span>`;
 }
 let checkingListings = false;
+let listingsTimer;
 async function refreshListings() {
   if (checkingListings || document.hidden) return;
   checkingListings = true;
   try {
     const response = await fetch('/api/anuncios', { signal: AbortSignal.timeout(120000) });
     if (!response.ok) return;
-    state.listings = await response.json();
+    const result = await response.json();
+    state.listings = result.listings;
     applyAmenityFilters();
-  } catch {} finally { checkingListings = false; }
+    clearTimeout(listingsTimer);
+    listingsTimer = setTimeout(refreshListings, result.checking ? 2000 : 60000);
+  } catch {
+    clearTimeout(listingsTimer);
+    listingsTimer = setTimeout(refreshListings, 60000);
+  } finally { checkingListings = false; }
 }
 function renderCards() {
   const results = filtered();
@@ -424,7 +431,6 @@ function applyAmenityFilters() {
 document.querySelectorAll('[data-amenity]').forEach(input => input.addEventListener('change', applyAmenityFilters));
 window.addEventListener('pageshow', applyAmenityFilters);
 $('activeListingsOnly').addEventListener('change', applyAmenityFilters);
-setInterval(refreshListings, 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshListings(); });
 $('sortSelect').addEventListener('change', event => { state.sort = event.target.value; renderCards(); });
 $('calculateButton').addEventListener('click', () => calculateScore(state.selected));
@@ -518,4 +524,5 @@ resizeHandle.addEventListener('keydown', event => {
 window.addEventListener('resize', () => {
   if (window.innerWidth > 860) resizeSidebar(Number(resizeHandle.getAttribute('aria-valuenow')));
 });
+refreshListings();
 start();
