@@ -9,6 +9,8 @@ bounds = [-47.2, -24.2, -46.0, -23.1]
 
 
 def category(tags):
+    if tags.get('amenity') == 'hospital' or tags.get('healthcare') == 'hospital':
+        return 'hospital'
     if tags.get('shop') == 'bakery':
         return 'bakery'
     if tags.get('leisure') == 'fitness_centre' or tags.get('sport') == 'fitness':

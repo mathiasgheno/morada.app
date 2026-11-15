@@ -4,6 +4,7 @@ const OVERPASS_SERVERS = [
   'https://overpass-api.de/api/interpreter',
 ];
 export const CATEGORIES = {
+  hospital: { label: 'Hospitais', weight: 0, glyph: '✚', showFilter: false },
   bakery: { label: 'Padarias', weight: 0, glyph: '♨' },
   gym: { label: 'Academias', weight: 0.20, glyph: '◕' },
   pharmacy: { label: 'Farmácias', weight: 0.20, glyph: '✚' },
@@ -26,6 +27,9 @@ export function poiQuery({ lat, lng }) {
     nwr${loc}["leisure"="fitness_centre"];
     nwr${loc}["sport"="fitness"];
     nwr${loc}["amenity"="pharmacy"];
+    nwr${loc}["amenity"="hospital"];
+    nwr${loc}["healthcare"="hospital"];
+    nwr${loc}["shop"="bakery"];
     nwr${loc}["shop"="chemist"];
     nwr${loc}["shop"~"^(supermarket|convenience|grocery)$"];
     nwr${loc}["leisure"="park"];
@@ -72,6 +76,7 @@ export function runOverpass(query, canRun = () => true) {
 }
 
 export function categorize(tags = {}) {
+  if (tags.amenity === 'hospital' || tags.healthcare === 'hospital') return 'hospital';
   if (tags.shop === 'bakery') return 'bakery';
   if (tags.leisure === 'fitness_centre' || tags.sport === 'fitness') return 'gym';
   if (tags.amenity === 'pharmacy' || tags.shop === 'chemist') return 'pharmacy';

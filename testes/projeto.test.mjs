@@ -3,6 +3,14 @@ import assert from 'node:assert/strict';
 import { extractProperties, sortProperties, normalizeProperty, parseDate, toNumber, dateText } from '../src/data.mjs';
 import { haversineMeters, parsePois, categorize, parseMetro, calculateWalkability, poiQuery, metroQuery } from '../src/geo.mjs';
 
+test('Reconhece hospitais sem classificar clínicas como hospitais ou alterar o índice', () => {
+  assert.equal(categorize({ amenity: 'hospital' }), 'hospital');
+  assert.equal(categorize({ healthcare: 'hospital' }), 'hospital');
+  assert.equal(categorize({ healthcare: 'clinic' }), null);
+  const coordinates = { lat: -23.55, lng: -46.63 };
+  assert.equal(calculateWalkability(coordinates, [{ ...coordinates, category: 'hospital' }]).score, calculateWalkability(coordinates, []).score);
+});
+
 test('Ordena distância à referência nos dois sentidos e mantém sem coordenadas no fim', () => {
   const reference = { lat: -23.556866, lng: -46.661231 };
   const properties = [{ id: 'longe', coordinates: { lat: -23.6, lng: -46.7 } }, { id: 'perto', coordinates: reference }, { id: 'sem', coordinates: null }];

@@ -678,7 +678,7 @@ $('metroLegendItems').addEventListener('change', event => {
 });
 document.querySelectorAll('.filter-chip:not([data-category="metro"])').forEach(chip => chip.remove());
 const metroChip = document.querySelector('.filter-chip[data-category="metro"]');
-metroChip.insertAdjacentHTML('beforebegin', Object.entries(CATEGORIES).map(([key, category]) =>
+metroChip.insertAdjacentHTML('beforebegin', Object.entries(CATEGORIES).filter(([, category]) => category.showFilter !== false).map(([key, category]) =>
   `<label class="filter-chip active" data-category="${key}"><input checked type="checkbox"><span class="chip-icon ${key}">${category.glyph}</span>${category.label}<span class="category-counter" data-count="${key}">–</span></label><label class="filter-chip" data-category="${key}-24h"><input type="checkbox"><span class="chip-icon ${key}">${category.glyph}</span>${category.label} 24h<span class="category-counter" data-count="${key}-24h">–</span></label>`
 ).join(''));
 document.querySelectorAll('.filter-chip').forEach(chip => {
