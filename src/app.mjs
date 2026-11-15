@@ -717,24 +717,52 @@ function updateMapExpansion() {
   expandMapButton.setAttribute('aria-pressed', String(expanded));
   requestAnimationFrame(() => map?.invalidateSize({ pan: false }));
 }
-expandMapButton.addEventListener('click', async () => {
-  if (document.fullscreenElement === mapContainer) await document.exitFullscreen();
-  else if (mapContainer.classList.contains('map-expanded')) mapContainer.classList.remove('map-expanded');
-  else {
-    try {
-      if (!mapContainer.requestFullscreen) throw new Error('Fullscreen indisponível');
-      await mapContainer.requestFullscreen();
-    } catch {
-      mapContainer.classList.add('map-expanded');
-    }
+let mapExpansionBusy = false;
+let mapPlaceholder;
+async function toggleMapExpansion() {
+  if (mapExpansionBusy) return;
+  mapExpansionBusy = true;
+  expandMapButton.disabled = true;
+  const expanded = mapContainer.classList.contains('map-expanded');
+  const before = mapContainer.getBoundingClientRect();
+  const center = map?.getCenter();
+  const zoom = map?.getZoom();
+  const radius = getComputedStyle(mapContainer).borderRadius;
+  if (!expanded) {
+    mapPlaceholder = document.createElement('div');
+    mapPlaceholder.style.height = `${before.height}px`;
+    mapPlaceholder.setAttribute('aria-hidden', 'true');
+    mapContainer.before(mapPlaceholder);
+    mapContainer.classList.add('map-expanded');
   }
-  updateMapExpansion();
-});
+  const target = expanded ? mapPlaceholder.getBoundingClientRect() : mapContainer.getBoundingClientRect();
+  document.body.classList.add('map-is-expanded');
+  mapContainer.classList.add('map-expanding');
+  const frame = (rect, borderRadius) => ({ top: `${rect.top}px`, left: `${rect.left}px`, width: `${rect.width}px`, height: `${rect.height}px`, borderRadius });
+  try {
+    const animation = mapContainer.animate([frame(before, radius), frame(target, expanded ? '15px' : '0px')], {
+      duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 420,
+      easing: 'cubic-bezier(.22,1,.36,1)',
+    });
+    await animation.finished;
+  } finally {
+    if (expanded) {
+      mapContainer.classList.remove('map-expanded');
+      mapPlaceholder.remove();
+    }
+    mapContainer.classList.remove('map-expanding');
+    updateMapExpansion();
+    map?.invalidateSize({ pan: false });
+    if (center) map.setView(center, zoom, { animate: false });
+    expandMapButton.disabled = false;
+    mapExpansionBusy = false;
+  }
+}
+expandMapButton.addEventListener('click', toggleMapExpansion);
 document.addEventListener('fullscreenchange', updateMapExpansion);
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && mapContainer.classList.contains('map-expanded')) {
-    mapContainer.classList.remove('map-expanded');
-    updateMapExpansion();
+    toggleMapExpansion();
     expandMapButton.focus();
   }
 });
