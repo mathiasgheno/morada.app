@@ -16,7 +16,7 @@
   <body>
     <div class="app-shell">
       <div class="app-content">
-        <aside class="sidebar" aria-label="Lista de imóveis">
+        <aside id="propertySidebar" class="sidebar" aria-label="Lista de imóveis">
           <div class="sidebar-intro">
             <div class="eyebrow">ENCONTRE SEU LUGAR</div>
             <h1>O imóvel certo.<br /><em>O bairro também.</em></h1>
@@ -52,6 +52,7 @@
         </aside>
 
         <div id="sidebarResize" class="sidebar-resize" role="separator" aria-label="Largura da lista de imóveis" aria-orientation="vertical" aria-valuemin="300" aria-valuemax="800" aria-valuenow="450" tabindex="0"></div>
+        <button id="toggleSidebar" class="sidebar-toggle" type="button" aria-controls="propertySidebar" aria-expanded="true" aria-label="Recolher lista de imóveis">‹</button>
         <main class="workspace">
           <div class="workspace-heading" hidden>
             <div>

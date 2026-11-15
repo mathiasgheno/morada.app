@@ -450,21 +450,7 @@ function selectProperty(id, options = {}) {
   $('officialLink').href = officialScoreUrl(property);
   scoreStatus(property);
   renderCards();
-  if (options.focusCard) {
-    const card = $('propertyList').querySelector(`[data-id="${CSS.escape(property.id)}"]`);
-    if (card) {
-      card.focus({ preventScroll: true });
-      const list = $('propertyList');
-      const cardBounds = card.getBoundingClientRect();
-      const listBounds = list.getBoundingClientRect();
-      const horizontal = window.innerWidth <= 860;
-      list.scrollTo({
-        top: horizontal ? list.scrollTop : list.scrollTop + cardBounds.top - listBounds.top - 12,
-        left: horizontal ? list.scrollLeft + cardBounds.left - listBounds.left - 18 : list.scrollLeft,
-        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
-      });
-    }
-  }
+  if (options.focusCard) scrollToSelectedCard();
   renderPropertyMarkers();
   renderPois();
   renderMetro();
@@ -479,6 +465,25 @@ function selectProperty(id, options = {}) {
     }
   }
   loadNeighborhood(property, token);
+}
+function scrollToSelectedCard(focus = true) {
+  const property = state.selected;
+  if (property) {
+    const card = $('propertyList').querySelector(`[data-id="${CSS.escape(property.id)}"]`);
+    if (card) {
+      const collapsed = document.querySelector('.app-content').classList.contains('sidebar-collapsed');
+      if (focus && !collapsed) card.focus({ preventScroll: true });
+      const list = $('propertyList');
+      const cardBounds = card.getBoundingClientRect();
+      const listBounds = list.getBoundingClientRect();
+      const horizontal = window.innerWidth <= 860;
+      list.scrollTo({
+        top: horizontal ? list.scrollTop : list.scrollTop + cardBounds.top - listBounds.top - 12,
+        left: horizontal ? list.scrollLeft + cardBounds.left - listBounds.left - 18 : list.scrollLeft,
+        behavior: collapsed || !focus || window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+      });
+    }
+  }
 }
 async function calculateScore(property) {
   if (!property?.coordinates) return;
@@ -687,6 +692,21 @@ document.querySelectorAll('.filter-chip').forEach(chip => {
   });
 });
 const resizeHandle = $('sidebarResize');
+const sidebarToggle = $('toggleSidebar');
+sidebarToggle.addEventListener('click', () => {
+  const collapsed = document.querySelector('.app-content').classList.toggle('sidebar-collapsed');
+  $('propertySidebar').inert = collapsed;
+  $('propertySidebar').setAttribute('aria-hidden', String(collapsed));
+  resizeHandle.inert = collapsed;
+  sidebarToggle.textContent = collapsed ? '›' : '‹';
+  sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+  sidebarToggle.setAttribute('aria-label', collapsed ? 'Exibir lista de imóveis' : 'Recolher lista de imóveis');
+  highlightProperty(null);
+  requestAnimationFrame(() => {
+    map?.invalidateSize({ pan: false });
+    if (!collapsed) scrollToSelectedCard(false);
+  });
+});
 const expandMapButton = $('expandMap');
 const mapContainer = document.querySelector('.map-container');
 function updateMapExpansion() {
