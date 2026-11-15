@@ -82,7 +82,8 @@ function initMap() {
   setStatus('Selecione um imóvel para explorar a região');
 }
 function pointIcon(property, selected = false) {
-  return L.divIcon({ html: `<div class="pin${selected ? ' selected' : ''}" style="--availability-color:${availabilityColor(property)}"></div>`, className: '', iconSize: selected ? [28, 28] : [23, 23], iconAnchor: selected ? [14, 14] : [11, 11] });
+  const favorite = state.favorites.has(property.id);
+  return L.divIcon({ html: `<div class="pin${selected ? ' selected' : ''}${favorite ? ' pin-favorite' : ''}" style="--availability-color:${availabilityColor(property)}">${favorite ? '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="m12 2 3.1 6.3 7 .9-5.1 5 1.2 7-6.2-3.3-6.2 3.3 1.2-7-5.1-5 7-.9Z"/></svg>' : ''}</div>`, className: '', iconSize: selected ? [28, 28] : [23, 23], iconAnchor: selected ? [14, 14] : [11, 11] });
 }
 function renderPropertyMarkers(fitAll = false) {
   if (!map) return;
@@ -94,6 +95,7 @@ function renderPropertyMarkers(fitAll = false) {
     coords.push([property.coordinates.lat, property.coordinates.lng]);
     const selected = state.selected?.id === property.id;
     const marker = L.marker([property.coordinates.lat, property.coordinates.lng], { icon: pointIcon(property, selected), zIndexOffset: selected ? 1000 : 0 });
+    if (state.favorites.has(property.id)) marker.options.title = `Favorito · ${property.title}`;
     marker.bindPopup(`<div class="popup-title">${escapeHtml(property.title)}</div><div class="popup-sub">${property.total !== null ? 'Total: ' : ''}${escapeHtml(brl(property.total ?? property.price))} ${property.kind === 'Aluguel' ? '/mês' : ''}</div>`);
     marker.on('click', () => selectProperty(property.id, { focusCard: true }));
     marker.addTo(propertyLayer);
