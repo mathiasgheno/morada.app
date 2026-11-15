@@ -44,13 +44,7 @@ function initMap() {
     setStatus('Mapa indisponível: Leaflet não carregado');
     return;
   }
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  map = L.map('map', {
-    zoomControl: true, preferCanvas: true,
-    zoomAnimation: !reducedMotion, markerZoomAnimation: !reducedMotion,
-    fadeAnimation: !reducedMotion, zoomSnap: 0.25, zoomDelta: 0.5,
-    scrollWheelZoom: true, wheelDebounceTime: 40, wheelPxPerZoomLevel: 90,
-  }).setView([-23.56, -46.65], 11);
+  map = L.map('map', { zoomControl: true, preferCanvas: true, zoomAnimation: false }).setView([-23.56, -46.65], 11);
   new ResizeObserver(() => map.invalidateSize({ pan: false })).observe($('map'));
   if (window.protomapsL) {
     protomapsL.leafletLayer({ url: './sao-paulo.pmtiles', flavor: 'light', lang: 'pt', maxDataZoom: 15,
