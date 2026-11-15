@@ -59,19 +59,20 @@ function initMap() {
   radiusLayer = L.layerGroup().addTo(map);
   poiLayer = L.layerGroup().addTo(map);
   propertyLayer = L.layerGroup().addTo(map);
+  const workIcon = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12a25 25 0 0 0 18 0M12 12v3"/></svg>';
   L.marker(referencePoint, {
-    icon: L.divIcon({ className: 'reference-marker', html: '<span aria-hidden="true">★</span>', iconSize: [36, 36], iconAnchor: [18, 18] }),
+    icon: L.divIcon({ className: 'reference-marker', html: workIcon, iconSize: [36, 36], iconAnchor: [18, 18] }),
     zIndexOffset: 2000,
-    title: 'Av. Paulista, 2300 — 19º andar, conj. 192',
+    title: 'Trabalho · Av. Paulista, 2300 — 19º andar, conj. 192',
   }).addTo(map)
-    .bindTooltip('Paulista, 2300', { permanent: true, direction: 'top', offset: [0, -20], className: 'reference-tooltip' })
-    .bindPopup('<div class="popup-title">Av. Paulista, 2300</div><div class="popup-sub">19º andar · Conj. 192<br>Bela Vista · São Paulo - SP<br>CEP informado: 01310-200<br>Localização aproximada do edifício.</div>');
+    .bindTooltip('Trabalho · Paulista, 2300', { permanent: true, direction: 'top', offset: [0, -20], className: 'reference-tooltip' })
+    .bindPopup('<div class="popup-title">Trabalho · Av. Paulista, 2300</div><div class="popup-sub">19º andar · Conj. 192<br>Bela Vista · São Paulo - SP<br>CEP informado: 01310-200<br>Localização aproximada do edifício.</div>');
   const referenceControl = L.control({ position: 'topleft' });
   referenceControl.onAdd = () => {
     const button = L.DomUtil.create('button', 'reference-button');
     button.type = 'button';
-    button.textContent = '★ Paulista, 2300';
-    button.title = 'Centralizar no endereço destacado';
+    button.innerHTML = `${workIcon}<span>Trabalho · Paulista, 2300</span>`;
+    button.title = 'Centralizar no local de trabalho';
     L.DomEvent.disableClickPropagation(button);
     L.DomEvent.disableScrollPropagation(button);
     button.addEventListener('click', () => map.setView(referencePoint, 16));
