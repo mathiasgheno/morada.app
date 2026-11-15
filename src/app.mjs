@@ -115,7 +115,7 @@ function filtered() {
     if (![...state.amenities].every(key => p[key])) return false;
     const text = [p.id, p.title, p.street, p.neighborhood, p.city, p.state].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return text.includes(search);
-  }), state.sort);
+  }), state.sort, { lat: referencePoint[0], lng: referencePoint[1] });
 }
 function cardHtml(p) {
   const selected = p.id === state.selected?.id;

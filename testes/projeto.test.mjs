@@ -3,6 +3,13 @@ import assert from 'node:assert/strict';
 import { extractProperties, sortProperties, normalizeProperty, parseDate, toNumber, dateText } from '../src/data.mjs';
 import { haversineMeters, parsePois, categorize, parseMetro, calculateWalkability, poiQuery, metroQuery } from '../src/geo.mjs';
 
+test('Ordena distância à referência nos dois sentidos e mantém sem coordenadas no fim', () => {
+  const reference = { lat: -23.556866, lng: -46.661231 };
+  const properties = [{ id: 'longe', coordinates: { lat: -23.6, lng: -46.7 } }, { id: 'perto', coordinates: reference }, { id: 'sem', coordinates: null }];
+  assert.deepEqual(sortProperties(properties, 'distance-asc', reference).map(property => property.id), ['perto', 'longe', 'sem']);
+  assert.deepEqual(sortProperties(properties, 'distance-desc', reference).map(property => property.id), ['longe', 'perto', 'sem']);
+});
+
 test('Preserva total mensal e ordena pelo custo total em vez do aluguel', () => {
   const first = normalizeProperty({ id: '1', rentValue: 2000, condominiumValue: 800, totalCost: 3000 });
   const second = normalizeProperty({ id: '2', rentValue: 2300, totalCost: 2600 });

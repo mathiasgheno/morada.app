@@ -1,3 +1,4 @@
+import { haversineMeters } from './geo.mjs';
 // Normalizador tolerante a diferentes estruturas de JSON (inclusive objetos do QuintoAndar).
 const hasValue = value => value !== undefined && value !== null && value !== '';
 
@@ -188,12 +189,13 @@ export function extractProperties(json) {
   return entries.map(normalizeProperty).filter(Boolean);
 }
 
-export function sortProperties(properties, sort = 'price-asc') {
+export function sortProperties(properties, sort = 'price-asc', reference = null) {
   const descending = sort.endsWith('desc');
   const byDate = sort.startsWith('date');
+  const value = property => sort.startsWith('distance') ? (property.coordinates && reference ? haversineMeters(reference, property.coordinates) : null) : byDate ? property.availableAt : property.total ?? property.price;
   return [...properties].sort((a, b) => {
-    const av = byDate ? a.availableAt : a.total ?? a.price;
-    const bv = byDate ? b.availableAt : b.total ?? b.price;
+    const av = value(a);
+    const bv = value(b);
     if (av === null || av === undefined) return bv === null || bv === undefined ? a.id.localeCompare(b.id) : 1;
     if (bv === null || bv === undefined) return -1;
     if (av !== bv) return (av - bv) * (descending ? -1 : 1);
