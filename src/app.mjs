@@ -120,8 +120,8 @@ function filtered() {
     if (![...state.amenities].every(key => p[key])) return false;
     const text = [p.id, p.title, p.street, p.neighborhood, p.city, p.state].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return text.includes(search);
-  }), state.sort === 'favorites-first' ? 'price-asc' : state.sort, { lat: referencePoint[0], lng: referencePoint[1] });
-  return state.sort === 'favorites-first' ? results.sort((first, second) => Number(state.favorites.has(second.id)) - Number(state.favorites.has(first.id))) : results;
+  }), state.sort, { lat: referencePoint[0], lng: referencePoint[1] });
+  return results.sort((first, second) => Number(state.favorites.has(second.id)) - Number(state.favorites.has(first.id)));
 }
 function photoArrow(direction) {
   return `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="${direction === 'left' ? 'M15 5 8 12 15 19' : 'M9 5 16 12 9 19'}" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;

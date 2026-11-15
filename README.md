@@ -2,7 +2,7 @@
 
 ## Favoritos pessoais
 
-Use `bun run favorito 893631548` para marcar, `bun run favorito 893631548 --remove` para desmarcar e `bun run favorito --list` para listar. Os IDs ficam em `favoritos.json`, separado dos dados do anúncio, com trava e gravação atômica. Recarregue a página para mostrar as estrelas douradas. A interface permite “Somente favoritos” e “Favoritos primeiro” (desempate por menor preço total); as estrelas são indicativas, não botões de gravação. Não depende de localStorage nem de endpoint de escrita.
+Use `bun run favorito 893631548` para marcar, `bun run favorito 893631548 --remove` para desmarcar e `bun run favorito --list` para listar. Os IDs ficam em `favoritos.json`, separado dos dados do anúncio, com trava e gravação atômica. Recarregue a página para mostrar as estrelas douradas. Os favoritos sempre aparecem no topo, respeitando a ordenação escolhida dentro dos grupos de favoritos e demais imóveis. O checkbox “Somente favoritos” restringe a lista e o mapa aos favoritos. As estrelas são indicativas, não botões de gravação. Não depende de localStorage nem de endpoint de escrita.
 
 ## Base de estabelecimentos offline
 
