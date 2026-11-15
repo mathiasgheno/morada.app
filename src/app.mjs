@@ -175,13 +175,17 @@ async function refreshListings() {
   checkingListings = true;
   try {
     const response = await fetch('/api/anuncios', { signal: AbortSignal.timeout(120000) });
-    if (!response.ok) return;
+    if (!response.ok) throw new Error(`Status dos anúncios: HTTP ${response.status}`);
     const result = await response.json();
     state.listings = result.listings;
     applyAmenityFilters();
     clearTimeout(listingsTimer);
     listingsTimer = setTimeout(refreshListings, result.checking ? 2000 : 60000);
   } catch {
+    document.querySelectorAll('.listing-status').forEach(dot => {
+      dot.title = 'Não foi possível consultar o servidor de status. Nova tentativa em 1 minuto.';
+      dot.setAttribute('aria-label', dot.title);
+    });
     clearTimeout(listingsTimer);
     listingsTimer = setTimeout(refreshListings, 60000);
   } finally { checkingListings = false; }
