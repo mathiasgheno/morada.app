@@ -679,8 +679,22 @@ $('metroLegendItems').addEventListener('change', event => {
 document.querySelectorAll('.filter-chip:not([data-category="metro"])').forEach(chip => chip.remove());
 const metroChip = document.querySelector('.filter-chip[data-category="metro"]');
 metroChip.insertAdjacentHTML('beforebegin', Object.entries(CATEGORIES).filter(([, category]) => category.showFilter !== false).map(([key, category]) =>
-  `<label class="filter-chip active" data-category="${key}"><input checked type="checkbox"><span class="chip-icon ${key}">${category.glyph}</span>${category.label}<span class="category-counter" data-count="${key}">–</span></label><label class="filter-chip" data-category="${key}-24h"><input type="checkbox"><span class="chip-icon ${key}">${category.glyph}</span>${category.label} 24h<span class="category-counter" data-count="${key}-24h">–</span></label>`
+  `<div class="poi-category" role="group" aria-label="${category.label}"><button type="button" class="poi-segment" data-poi-filter="${key}" aria-pressed="true" aria-label="Mostrar todos: ${category.label}"><span class="chip-icon ${key}">${category.glyph}</span>${category.label}<span class="category-counter" data-count="${key}">–</span></button><button type="button" class="poi-segment poi-hours" data-poi-filter="${key}-24h" aria-pressed="false" aria-label="Mostrar apenas ${category.label} 24 horas"><span class="category-counter" data-count="${key}-24h">–</span>24h</button></div>`
 ).join(''));
+document.querySelector('.filters').addEventListener('click', event => {
+  const button = event.target.closest('[data-poi-filter]');
+  if (!button) return;
+  const key = button.dataset.poiFilter;
+  const active = state.visibleCategories.has(key);
+  const base = key.replace(/-24h$/, '');
+  state.visibleCategories.delete(base);
+  state.visibleCategories.delete(`${base}-24h`);
+  if (!active) state.visibleCategories.add(key);
+  button.closest('.poi-category').querySelectorAll('[data-poi-filter]').forEach(segment => {
+    segment.setAttribute('aria-pressed', String(state.visibleCategories.has(segment.dataset.poiFilter)));
+  });
+  renderPois();
+});
 document.querySelectorAll('.filter-chip').forEach(chip => {
   chip.addEventListener('change', event => {
     const category = chip.dataset.category;

@@ -6,6 +6,8 @@ Use `bun run favorito 893631548` para marcar, `bun run favorito 893631548 --remo
 
 ## Base de estabelecimentos offline
 
+Cada categoria aparece em um único chip com total e quantidade 24h. O total inclui os 24h. Nome/total e 24h são botões mutuamente exclusivos: ativar um desativa o outro; clicar no ativo oculta a categoria. Hospitais mostram somente contadores, sem controles de filtro.
+
 Hospitais são extraídos por `amenity=hospital` ou `healthcare=hospital`, sem incluir clínicas automaticamente. Aparecem automaticamente nos estabelecimentos próximos ao selecionar um imóvel, em até 350 m. A seção “O que tem ao redor?” mostra contadores de Hospitais e Hospitais 24h, sem checkbox ou filtro próprio. Os horários são preservados como nas outras categorias; 24h só é confirmado por `opening_hours=24/7`. Isso não confirma a existência de pronto-socorro ou disponibilidade de atendimento. Hospitais não alteram o índice de caminhabilidade.
 
 A base inclui também padarias (`shop=bakery`) e preserva `opening_hours` como `openingHours`. `is24Hours=true` confirma apenas a expressão explícita `24/7`; outras expressões ou horários ausentes ficam não confirmados (`null`). Os filtros 24h usam os mesmos estabelecimentos sem duplicar marcadores. Para mostrar somente 24h, desmarque o filtro geral da categoria. Padarias não alteram os pesos do índice de caminhabilidade. Os horários são um retrato do cadastro OSM, não confirmação em tempo real.
