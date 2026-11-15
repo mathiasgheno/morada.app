@@ -125,7 +125,7 @@ function cardHtml(p) {
   const photo = p.images.length ? `<img src="${escapeHtml(p.images[photoIndex])}" alt="Foto ${photoIndex + 1} de ${name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" />${p.images.length > 1 ? `<button type="button" class="photo-prev" data-action="photo-prev" aria-label="Foto anterior">‹</button><button type="button" class="photo-next" data-action="photo-next" aria-label="Próxima foto">›</button><small class="photo-count">${photoIndex + 1}/${p.images.length}</small>` : ''}` : '';
   return `<article class="property-card ${selected ? 'selected' : ''}" data-id="${escapeHtml(p.id)}" tabindex="-1" aria-label="${name}">
     <div class="card-main" data-action="select" tabindex="0" role="button" aria-label="Exibir ${name} no mapa">
-      <div class="card-photo"><span>⌂</span>${photo}${p.demo ? '<span class="card-demo">EXEMPLO</span>' : ''}</div>
+      <div class="card-photo" ${p.images.length ? 'data-action="gallery" role="button" tabindex="0" aria-label="Abrir todas as fotos"' : ''}><span>⌂</span>${photo}${p.demo ? '<span class="card-demo">EXEMPLO</span>' : ''}</div>
       <div class="card-details">
         <div class="card-kicker"><span class="card-type">${escapeHtml(p.propertyType.toUpperCase())}</span><span class="card-id">${listingDot(p.id)} #${escapeHtml(p.id)}</span></div>
         <h3 class="card-title">${name}</h3><p class="card-address">${escapeHtml([p.street, p.city].filter(Boolean).join(' · ') || 'Endereço não informado')}</p>
@@ -144,6 +144,90 @@ function cardHtml(p) {
     <div class="card-actions"><button type="button" class="action-score" data-action="score" ${!p.coordinates ? 'disabled title="Coordenadas não disponíveis"' : ''}>Calcular índice ↗</button>${propertyVideo(p) ? '<button type="button" class="card-video" data-action="video">▶ Vídeo</button>' : ''}${safeLink(p.url) ? `<a class="listing-link" href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" title="Abrir anúncio no QuintoAndar" aria-label="Abrir anúncio no QuintoAndar">Anúncio ↗</a>` : ''}</div>
   </article>`;
 }
+const imageCache = new Map();
+const imageQueue = [];
+let activeImages = 0;
+function pumpImages() {
+  while (activeImages < 4 && imageQueue.length) {
+    const job = imageQueue.shift();
+    activeImages++;
+    const photo = new Image();
+    photo.referrerPolicy = 'no-referrer';
+    const finish = async success => {
+      if (success) await photo.decode().catch(() => {});
+      job.resolve(success ? photo : null);
+      activeImages--;
+      pumpImages();
+    };
+    photo.onload = () => finish(true);
+    photo.onerror = () => finish(false);
+    photo.src = job.url;
+  }
+}
+function preloadImage(url, priority = false) {
+  if (!imageCache.has(url)) imageCache.set(url, new Promise(resolve => {
+    const job = { url, resolve };
+    if (priority) imageQueue.unshift(job); else imageQueue.push(job);
+  }));
+  if (priority) {
+    const index = imageQueue.findIndex(job => job.url === url);
+    if (index > 0) imageQueue.unshift(...imageQueue.splice(index, 1));
+  }
+  pumpImages();
+  return imageCache.get(url);
+}
+function preloadGallery(property) {
+  property?.images.forEach(url => preloadImage(url));
+}
+const photoObserver = new IntersectionObserver(entries => {
+  for (const entry of entries) if (entry.isIntersecting) {
+    preloadGallery(state.properties.find(property => property.id === entry.target.dataset.id));
+    photoObserver.unobserve(entry.target);
+  }
+}, { root: $('propertyList') });
+const photoDialog = $('photoDialog');
+let galleryProperty = null;
+let galleryIndex = 0;
+let galleryVersion = 0;
+async function showGalleryPhoto(index) {
+  const property = galleryProperty;
+  const version = ++galleryVersion;
+  galleryIndex = (index + property.images.length) % property.images.length;
+  const photo = await preloadImage(property.images[galleryIndex], true);
+  if (version !== galleryVersion || !photoDialog.open) return;
+  $('galleryCounter').textContent = `${galleryIndex + 1} / ${property.images.length}${photo ? '' : ' · Foto indisponível'}`;
+  if (photo) {
+    photo.alt = `Foto ${galleryIndex + 1} de ${property.title}`;
+    $('galleryImage').replaceChildren(photo);
+  }
+}
+function openGallery(property) {
+  galleryProperty = property;
+  $('photoTitle').textContent = property.title;
+  $('galleryPrevious').disabled = $('galleryNext').disabled = property.images.length < 2;
+  photoDialog.showModal();
+  showGalleryPhoto(state.photos.get(property.id) || 0);
+  preloadGallery(property);
+}
+$('galleryPrevious').addEventListener('click', () => showGalleryPhoto(galleryIndex - 1));
+$('galleryNext').addEventListener('click', () => showGalleryPhoto(galleryIndex + 1));
+$('closePhotos').addEventListener('click', () => photoDialog.close());
+photoDialog.addEventListener('keydown', event => {
+  if (['ArrowLeft', 'ArrowRight'].includes(event.key)) {
+    event.preventDefault();
+    showGalleryPhoto(galleryIndex + (event.key === 'ArrowRight' ? 1 : -1));
+  }
+});
+photoDialog.addEventListener('click', event => {
+  const bounds = photoDialog.getBoundingClientRect();
+  if (event.target === photoDialog && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) photoDialog.close();
+});
+photoDialog.addEventListener('close', () => {
+  galleryVersion++;
+  $('galleryImage').replaceChildren();
+  $('galleryCounter').textContent = '';
+  $('propertyList').querySelector(`[data-id="${CSS.escape(galleryProperty.id)}"] .card-photo`)?.focus({ preventScroll: true });
+});
 function propertyVideo(property) {
   return property.raw.video?.items?.find(item => item.provider === 'VIMEO' && item.status === 'transcode_complete' && /^\d+(\/[a-zA-Z0-9]+)?$/.test(item.sourceId));
 }
@@ -208,6 +292,8 @@ function renderCards() {
   const results = filtered();
   $('listingCount').textContent = `${results.length} ${results.length === 1 ? 'imóvel encontrado' : 'imóveis encontrados'}`;
   $('propertyList').innerHTML = results.length ? results.map(cardHtml).join('') : '<div class="empty-state"><strong>Nenhum imóvel encontrado</strong>Tente outra busca ou importe um JSON com imóveis.</div>';
+  photoObserver.disconnect();
+  $('propertyList').querySelectorAll('.property-card').forEach(card => photoObserver.observe(card));
 }
 function scoreStatus(property) {
   const score = state.scores.get(property?.id);
@@ -464,6 +550,10 @@ $('propertyList').addEventListener('click', event => {
   const card = event.target.closest('.property-card');
   if (!button || !card) return;
   const id = card.dataset.id;
+  if (button.dataset.action === 'gallery') {
+    openGallery(state.properties.find(property => property.id === id));
+    return;
+  }
   if (button.dataset.action === 'video') {
     openVideo(state.properties.find(property => property.id === id));
     return;
@@ -472,8 +562,13 @@ $('propertyList').addEventListener('click', event => {
     const property = state.properties.find(p => p.id === id);
     const next = ((state.photos.get(id) || 0) + (button.dataset.action === 'photo-next' ? 1 : -1) + property.images.length) % property.images.length;
     state.photos.set(id, next);
-    card.outerHTML = cardHtml(property);
-    document.querySelector(`[data-id="${CSS.escape(id)}"] [data-action="${button.dataset.action}"]`)?.focus();
+    preloadImage(property.images[next], true).then(photo => {
+      if (!photo || state.photos.get(id) !== next || !card.isConnected) return;
+      const image = card.querySelector('.card-photo img');
+      if (image) { image.src = property.images[next]; image.alt = `Foto ${next + 1} de ${property.title}`; }
+      card.querySelector('.photo-count').textContent = `${next + 1}/${property.images.length}`;
+    });
+    preloadGallery(property);
     return;
   }
   if (button.dataset.action === 'score') {
@@ -482,6 +577,11 @@ $('propertyList').addEventListener('click', event => {
   } else selectProperty(id);
 });
 $('propertyList').addEventListener('keydown', event => {
+  if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.card-photo[data-action="gallery"]')) {
+    event.preventDefault();
+    openGallery(state.properties.find(property => property.id === event.target.closest('.property-card').dataset.id));
+    return;
+  }
   if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.card-main')) {
     event.preventDefault(); selectProperty(event.target.closest('.property-card').dataset.id);
   }

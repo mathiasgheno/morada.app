@@ -97,6 +97,11 @@
         </main>
       </div>
     </div>
+    <dialog id="photoDialog" class="photo-dialog" aria-labelledby="photoTitle">
+      <div class="video-heading"><strong id="photoTitle">Fotos do imóvel</strong><button id="closePhotos" type="button" aria-label="Fechar fotos">✕</button></div>
+      <div class="photo-stage"><button id="galleryPrevious" type="button" aria-label="Foto anterior">‹</button><div id="galleryImage"></div><button id="galleryNext" type="button" aria-label="Próxima foto">›</button></div>
+      <p id="galleryCounter" role="status"></p>
+    </dialog>
     <dialog id="videoDialog" class="video-dialog" aria-labelledby="videoTitle">
       <div class="video-heading"><strong id="videoTitle">Vídeo do imóvel</strong><button id="closeVideo" type="button" aria-label="Fechar vídeo">✕</button></div>
       <div id="videoPlayer" class="video-player"></div>
