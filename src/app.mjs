@@ -300,6 +300,8 @@ async function refreshListings() {
   } finally { checkingListings = false; }
 }
 function renderCards() {
+  $('clearSelection').disabled = !state.selected;
+  $('refreshButton').disabled = !state.selected?.coordinates;
   const results = filtered();
   $('listingCount').textContent = `${results.length} ${results.length === 1 ? 'imóvel encontrado' : 'imóveis encontrados'}`;
   $('propertyList').innerHTML = results.length ? results.map(cardHtml).join('') : '<div class="empty-state"><strong>Nenhum imóvel encontrado</strong>Tente outra busca ou importe um JSON com imóveis.</div>';
@@ -419,6 +421,23 @@ function officialScoreUrl(p) {
   const address = [p.street, p.neighborhood, p.city, p.state, 'Brasil'].filter(Boolean).join(', ');
   return address && !p.demo ? `https://www.walkscore.com/score/${encodeURIComponent(address)}` : 'https://www.walkscore.com/score/';
 }
+function clearPropertySelection() {
+  state.selected = null;
+  state.version++;
+  state.activePois = [];
+  highlightProperty(null);
+  radiusLayer?.clearLayers();
+  map?.closePopup();
+  $('selectedTitle').textContent = 'Descubra o bairro';
+  $('selectedSubtitle').textContent = 'Selecione um imóvel para explorar o que existe ao redor.';
+  $('officialLink').href = officialScoreUrl(null);
+  scoreStatus(null);
+  renderCards();
+  renderPropertyMarkers();
+  renderPois();
+  setStatus('Selecione um imóvel para explorar a região');
+}
+$('clearSelection').addEventListener('click', clearPropertySelection);
 function selectProperty(id, options = {}) {
   const property = state.properties.find(p => p.id === id);
   if (!property) return;
