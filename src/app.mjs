@@ -231,15 +231,16 @@ function scoreStatus(property) {
 }
 function renderPois() {
   if (poiLayer) poiLayer.clearLayers();
-  const counters = { gym: 0, pharmacy: 0, market: 0, park: 0 };
+  const counters = Object.fromEntries(Object.keys(CATEGORIES).flatMap(key => [[key, 0], [`${key}-24h`, 0]]));
   for (const poi of state.activePois) {
     counters[poi.category]++;
-    if (!map || !state.visibleCategories.has(poi.category)) continue;
+    if (poi.is24Hours === true) counters[`${poi.category}-24h`]++;
+    if (!map || !(state.visibleCategories.has(poi.category) || (poi.is24Hours === true && state.visibleCategories.has(`${poi.category}-24h`)))) continue;
     const cat = CATEGORIES[poi.category];
     const icon = L.divIcon({ html: `<div class="poi-pin ${poi.category}">${cat.glyph}</div>`, className: '', iconSize: [29, 29], iconAnchor: [14, 14] });
     const marker = L.marker([poi.lat, poi.lng], { icon });
     const metres = state.selected?.coordinates ? distanceText(Math.round(Math.hypot(poi.lat - state.selected.coordinates.lat, poi.lng - state.selected.coordinates.lng) * 100000)) : '';
-    marker.bindPopup(`<div class="popup-title">${escapeHtml(poi.name)}</div><div class="popup-sub">${escapeHtml(cat.label)} · OpenStreetMap</div>`);
+    marker.bindPopup(`<div class="popup-title">${escapeHtml(poi.name)}</div><div class="popup-sub">${escapeHtml(cat.label)}${poi.is24Hours === true ? ' · 24 horas' : ''} · OpenStreetMap</div><div class="popup-sub">${poi.openingHours ? `Horário cadastrado: ${escapeHtml(poi.openingHours)}` : 'Horário não informado'}</div>`);
     marker.addTo(poiLayer);
   }
   for (const [key, value] of Object.entries(counters)) {
@@ -532,6 +533,11 @@ $('metroLegendItems').addEventListener('change', event => {
   renderMetro();
   $('metroLegendItems').querySelector(`[data-metro-line="${CSS.escape(key)}"]`)?.focus({ preventScroll: true });
 });
+document.querySelectorAll('.filter-chip:not([data-category="metro"])').forEach(chip => chip.remove());
+const metroChip = document.querySelector('.filter-chip[data-category="metro"]');
+metroChip.insertAdjacentHTML('beforebegin', Object.entries(CATEGORIES).map(([key, category]) =>
+  `<label class="filter-chip active" data-category="${key}"><input checked type="checkbox"><span class="chip-icon ${key}">${category.glyph}</span>${category.label}<span class="category-counter" data-count="${key}">–</span></label><label class="filter-chip" data-category="${key}-24h"><input type="checkbox"><span class="chip-icon ${key}">${category.glyph}</span>${category.label} 24h<span class="category-counter" data-count="${key}-24h">–</span></label>`
+).join(''));
 document.querySelectorAll('.filter-chip').forEach(chip => {
   chip.addEventListener('change', event => {
     const category = chip.dataset.category;

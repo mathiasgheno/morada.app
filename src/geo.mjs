@@ -4,6 +4,7 @@ const OVERPASS_SERVERS = [
   'https://overpass-api.de/api/interpreter',
 ];
 export const CATEGORIES = {
+  bakery: { label: 'Padarias', weight: 0, glyph: '♨' },
   gym: { label: 'Academias', weight: 0.20, glyph: '◕' },
   pharmacy: { label: 'Farmácias', weight: 0.20, glyph: '✚' },
   market: { label: 'Mercados', weight: 0.35, glyph: '▣' },
@@ -71,6 +72,7 @@ export function runOverpass(query, canRun = () => true) {
 }
 
 export function categorize(tags = {}) {
+  if (tags.shop === 'bakery') return 'bakery';
   if (tags.leisure === 'fitness_centre' || tags.sport === 'fitness') return 'gym';
   if (tags.amenity === 'pharmacy' || tags.shop === 'chemist') return 'pharmacy';
   if (['supermarket', 'convenience', 'grocery'].includes(tags.shop)) return 'market';
@@ -98,6 +100,7 @@ export function calculateWalkability(coordinates, pois) {
   const categories = {};
   let score = 0;
   for (const [key, { weight }] of Object.entries(CATEGORIES)) {
+    if (weight === 0) continue;
     const distances = pois.filter(p => p.category === key).map(p => haversineMeters(coordinates, p));
     const nearest = distances.length ? Math.min(...distances) : null;
     // Até 300m = 100 pontos para a categoria; a 1500m = 0.

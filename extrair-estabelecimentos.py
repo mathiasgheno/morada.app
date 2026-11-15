@@ -9,6 +9,8 @@ bounds = [-47.2, -24.2, -46.0, -23.1]
 
 
 def category(tags):
+    if tags.get('shop') == 'bakery':
+        return 'bakery'
     if tags.get('leisure') == 'fitness_centre' or tags.get('sport') == 'fitness':
         return 'gym'
     if tags.get('amenity') == 'pharmacy' or tags.get('shop') == 'chemist':
@@ -32,7 +34,9 @@ class Extractor(osmium.SimpleHandler):
         latitude = (min(point[1] for point in points) + max(point[1] for point in points)) / 2
         if not (bounds[0] <= longitude <= bounds[2] and bounds[1] <= latitude <= bounds[3]):
             return
-        self.items[identifier] = dict(id=identifier, category=kind, name=tags.get('name', kind), lat=latitude, lng=longitude)
+        hours = tags.get('opening_hours')
+        self.items[identifier] = dict(id=identifier, category=kind, name=tags.get('name', kind), lat=latitude, lng=longitude,
+                                      openingHours=hours, is24Hours=True if hours and hours.strip() == '24/7' else None)
 
     def node(self, node):
         if category(node.tags) and node.location.valid():

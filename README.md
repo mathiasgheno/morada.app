@@ -2,6 +2,8 @@
 
 ## Base de estabelecimentos offline
 
+A base inclui também padarias (`shop=bakery`) e preserva `opening_hours` como `openingHours`. `is24Hours=true` confirma apenas a expressão explícita `24/7`; outras expressões ou horários ausentes ficam não confirmados (`null`). Os filtros 24h usam os mesmos estabelecimentos sem duplicar marcadores. Para mostrar somente 24h, desmarque o filtro geral da categoria. Padarias não alteram os pesos do índice de caminhabilidade. Os horários são um retrato do cadastro OSM, não confirmação em tempo real.
+
 Medição local em 15/11/2026: PBF de 863.683.302 bytes, integridade conferida com o MD5 oficial; extração em 252 s; base final com 14.819 pontos e 1,54 MiB. Consulta dos 28 imóveis: 22,8 ms incluindo primeira leitura, média de 4,8 ms por lote com a base em memória (20 repetições, Bun). São tempos de consulta, sem incluir renderização do mapa ou download inicial.
 
 Os scripts de inclusão e atualização consultam `estabelecimentos-locais.json`, sem rede. A base compacta é extraída do PBF Sudeste da Geofabrik, mantendo academias, farmácias, mercados e parques na caixa geográfica longitude -47.2 a -46.0 / latitude -24.2 a -23.1 (capital e entorno). Imóveis fora dessa cobertura são rejeitados explicitamente. Centros de áreas usam o centro da caixa envolvente, não a entrada do estabelecimento.

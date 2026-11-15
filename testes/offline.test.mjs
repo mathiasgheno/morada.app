@@ -19,3 +19,15 @@ test('Não confunde imóvel fora da cobertura com ausência de estabelecimentos'
   assert.throws(() => consultarNaBase([{ id: 2, lat: -23.55, lng: -46.0001 }], database), /fora da cobertura/);
   assert.throws(() => consultarNaBase([{ id: 3 }], database), /coordenadas ausentes/);
 });
+
+test('Preserva horários e a confirmação de 24h na consulta local', () => {
+  const enriched = { ...database, items: [
+    { id: 'padaria', category: 'bakery', lat: -23.5501, lng: -46.63, openingHours: '24/7', is24Hours: true },
+    { id: 'sem-horario', category: 'gym', lat: -23.5501, lng: -46.63, openingHours: null, is24Hours: null },
+  ] };
+  const [result] = consultarNaBase([{ id: 1, lat: -23.55, lng: -46.63 }], enriched);
+  assert.equal(result.items[0].category, 'bakery');
+  assert.equal(result.items[0].openingHours, '24/7');
+  assert.equal(result.items[0].is24Hours, true);
+  assert.equal(result.items[1].is24Hours, null);
+});
