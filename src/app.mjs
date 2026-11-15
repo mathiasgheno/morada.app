@@ -49,7 +49,7 @@ function initMap() {
     zoomControl: true, preferCanvas: true,
     zoomAnimation: !reducedMotion, markerZoomAnimation: !reducedMotion,
     fadeAnimation: !reducedMotion, zoomSnap: 0.25, zoomDelta: 0.5,
-    scrollWheelZoom: true, wheelDebounceTime: 80, wheelPxPerZoomLevel: 120,
+    scrollWheelZoom: true, wheelDebounceTime: 40, wheelPxPerZoomLevel: 90,
   }).setView([-23.56, -46.65], 11);
   new ResizeObserver(() => map.invalidateSize({ pan: false })).observe($('map'));
   if (window.protomapsL) {
