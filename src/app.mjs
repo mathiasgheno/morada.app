@@ -13,6 +13,17 @@ const state = {
 };
 let map, propertyLayer, poiLayer, metroLayer, radiusLayer, metroRenderer;
 const referencePoint = [-23.556866, -46.661231];
+const propertyMarkers = new Map();
+let hoveredPropertyId = null;
+function highlightProperty(id) {
+  const previous = propertyMarkers.get(hoveredPropertyId);
+  previous?.getElement()?.querySelector('.pin')?.classList.remove('pin-hovered');
+  previous?.setZIndexOffset(hoveredPropertyId === state.selected?.id ? 1000 : 0);
+  hoveredPropertyId = id;
+  const marker = propertyMarkers.get(id);
+  marker?.getElement()?.querySelector('.pin')?.classList.add('pin-hovered');
+  marker?.setZIndexOffset(1500);
+}
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const safeLink = value => typeof value === 'string' && /^https?:\/\//i.test(value) ? value : null;
@@ -74,6 +85,7 @@ function pointIcon(property, selected = false) {
 function renderPropertyMarkers(fitAll = false) {
   if (!map) return;
   propertyLayer.clearLayers();
+  propertyMarkers.clear();
   const coords = [];
   for (const property of filtered()) {
     if (!property.coordinates) continue;
@@ -83,7 +95,9 @@ function renderPropertyMarkers(fitAll = false) {
     marker.bindPopup(`<div class="popup-title">${escapeHtml(property.title)}</div><div class="popup-sub">${property.total !== null ? 'Total: ' : ''}${escapeHtml(brl(property.total ?? property.price))} ${property.kind === 'Aluguel' ? '/mês' : ''}</div>`);
     marker.on('click', () => selectProperty(property.id, { focusCard: true }));
     marker.addTo(propertyLayer);
+    propertyMarkers.set(property.id, marker);
   }
+  if (hoveredPropertyId) highlightProperty(hoveredPropertyId);
   if (fitAll && coords.length) {
     const median = values => [...values].sort((first, second) => first - second)[Math.floor(values.length / 2)];
     const center = L.latLng(median(coords.map(point => point[0])), median(coords.map(point => point[1])));
@@ -428,6 +442,22 @@ async function loadMetroNetwork() {
     setStatus('Não foi possível carregar as linhas de metrô locais. Recarregue a página.');
   }
 }
+$('propertyList').addEventListener('pointerover', event => {
+  const card = event.target.closest('.property-card');
+  if (card && !card.contains(event.relatedTarget)) highlightProperty(card.dataset.id);
+});
+$('propertyList').addEventListener('pointerout', event => {
+  const card = event.target.closest('.property-card');
+  if (card && !card.contains(event.relatedTarget)) highlightProperty(null);
+});
+$('propertyList').addEventListener('focusin', event => {
+  const card = event.target.closest('.property-card');
+  if (card) highlightProperty(card.dataset.id);
+});
+$('propertyList').addEventListener('focusout', event => {
+  const card = event.target.closest('.property-card');
+  if (card && !card.contains(event.relatedTarget)) highlightProperty(null);
+});
 $('propertyList').addEventListener('click', event => {
   const button = event.target.closest('[data-action]');
   const card = event.target.closest('.property-card');
