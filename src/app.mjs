@@ -10,6 +10,7 @@ const state = {
   amenities: new Set(),
   hiddenMetroLines: new Set(),
   listings: {},
+  favorites: new Set(),
 };
 let map, propertyLayer, poiLayer, metroLayer, radiusLayer, metroRenderer;
 const referencePoint = [-23.556866, -46.661231];
@@ -110,12 +111,14 @@ function renderPropertyMarkers(fitAll = false) {
 }
 function filtered() {
   const search = state.query.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  return sortProperties(state.properties.filter(p => {
+  const results = sortProperties(state.properties.filter(p => {
+    if ($('favoritesOnly').checked && !state.favorites.has(p.id)) return false;
     if ($('activeListingsOnly').checked && state.listings[p.id]?.status !== 'active') return false;
     if (![...state.amenities].every(key => p[key])) return false;
     const text = [p.id, p.title, p.street, p.neighborhood, p.city, p.state].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return text.includes(search);
-  }), state.sort, { lat: referencePoint[0], lng: referencePoint[1] });
+  }), state.sort === 'favorites-first' ? 'price-asc' : state.sort, { lat: referencePoint[0], lng: referencePoint[1] });
+  return state.sort === 'favorites-first' ? results.sort((first, second) => Number(state.favorites.has(second.id)) - Number(state.favorites.has(first.id))) : results;
 }
 function photoArrow(direction) {
   return `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="${direction === 'left' ? 'M15 5 8 12 15 19' : 'M9 5 16 12 9 19'}" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -130,7 +133,7 @@ function cardHtml(p) {
     <div class="card-main" data-action="select" tabindex="0" role="button" aria-label="Exibir ${name} no mapa">
       <div class="card-photo" ${p.images.length ? 'data-action="gallery" role="button" tabindex="0" aria-label="Abrir todas as fotos"' : ''}><span>⌂</span>${photo}${p.demo ? '<span class="card-demo">EXEMPLO</span>' : ''}</div>
       <div class="card-details">
-        <div class="card-kicker"><span class="card-type">${escapeHtml(p.propertyType.toUpperCase())}</span><span class="card-id">${listingDot(p.id)} #${escapeHtml(p.id)}</span></div>
+        <div class="card-kicker"><span class="card-type">${escapeHtml(p.propertyType.toUpperCase())}</span><span class="card-id">${state.favorites.has(p.id) ? '<span class="favorite-star" role="img" aria-label="Imóvel favorito" title="Favorito">★</span> ' : ''}${listingDot(p.id)} #${escapeHtml(p.id)}</span></div>
         <h3 class="card-title">${name}</h3><p class="card-address">${escapeHtml([p.street, p.city].filter(Boolean).join(' · ') || 'Endereço não informado')}</p>
         <div class="card-price ${p.total === null && p.price === null ? 'card-price-muted' : ''}">${escapeHtml(brl(p.total ?? p.price))}${p.kind === 'Aluguel' ? '<small> /mês</small>' : ''}</div>
         <p class="card-costs">${p.total !== null ? 'Total mensal informado' : 'Total não informado'}${p.price !== null ? ` · Aluguel: ${escapeHtml(brl(p.price))}` : ''}${p.condo !== null ? ` · Condomínio: ${escapeHtml(brl(p.condo))}` : ''}</p>
@@ -507,6 +510,13 @@ function loadData(json, sourceLabel = 'arquivo') {
 }
 async function start() {
   initMap();
+  try {
+    const response = await fetch('./favoritos.json', { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const favorites = await response.json();
+    if (!Array.isArray(favorites)) throw new Error('Formato inválido');
+    state.favorites = new Set(favorites.map(String));
+  } catch (error) { console.warn('Não foi possível carregar os favoritos:', error.message); }
   loadMetroNetwork();
   try {
     const response = await fetch('./imoveis.json', { cache: 'no-store' });
@@ -611,6 +621,7 @@ function applyAmenityFilters() {
 document.querySelectorAll('[data-amenity]').forEach(input => input.addEventListener('change', applyAmenityFilters));
 window.addEventListener('pageshow', applyAmenityFilters);
 $('activeListingsOnly').addEventListener('change', applyAmenityFilters);
+$('favoritesOnly').addEventListener('change', applyAmenityFilters);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshListings(); });
 $('sortSelect').addEventListener('change', event => { state.sort = event.target.value; renderCards(); });
 $('calculateButton').addEventListener('click', () => calculateScore(state.selected));

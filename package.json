@@ -7,6 +7,7 @@
     "update:metro": "bun atualizar-metro.mjs",
     "add:imovel": "bun adicionar-imovel.mjs",
     "update:videos": "bun atualizar-videos.mjs",
-    "update:estabelecimentos": "bun atualizar-estabelecimentos.mjs"
+    "update:estabelecimentos": "bun atualizar-estabelecimentos.mjs",
+    "favorito": "bun favorito.mjs"
   }
 }

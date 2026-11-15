@@ -1,5 +1,9 @@
 # Morada — Explorador de imóveis
 
+## Favoritos pessoais
+
+Use `bun run favorito 893631548` para marcar, `bun run favorito 893631548 --remove` para desmarcar e `bun run favorito --list` para listar. Os IDs ficam em `favoritos.json`, separado dos dados do anúncio, com trava e gravação atômica. Recarregue a página para mostrar as estrelas douradas. A interface permite “Somente favoritos” e “Favoritos primeiro” (desempate por menor preço total); as estrelas são indicativas, não botões de gravação. Não depende de localStorage nem de endpoint de escrita.
+
 ## Base de estabelecimentos offline
 
 A base inclui também padarias (`shop=bakery`) e preserva `opening_hours` como `openingHours`. `is24Hours=true` confirma apenas a expressão explícita `24/7`; outras expressões ou horários ausentes ficam não confirmados (`null`). Os filtros 24h usam os mesmos estabelecimentos sem duplicar marcadores. Para mostrar somente 24h, desmarque o filtro geral da categoria. Padarias não alteram os pesos do índice de caminhabilidade. Os horários são um retrato do cadastro OSM, não confirmação em tempo real.

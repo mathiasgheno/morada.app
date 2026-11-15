@@ -9,3 +9,5 @@ imoveis.json.tmp
 *.osm.pbf
 .venv/
 __pycache__/
+favoritos.json.lock
+favoritos.json.tmp
