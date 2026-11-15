@@ -117,12 +117,15 @@ function filtered() {
     return text.includes(search);
   }), state.sort, { lat: referencePoint[0], lng: referencePoint[1] });
 }
+function photoArrow(direction) {
+  return `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="${direction === 'left' ? 'M15 5 8 12 15 19' : 'M9 5 16 12 9 19'}" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
 function cardHtml(p) {
   const selected = p.id === state.selected?.id;
   const name = escapeHtml(p.title);
   const score = state.scores.get(p.id);
   const photoIndex = state.photos.get(p.id) || 0;
-  const photo = p.images.length ? `<img src="${escapeHtml(p.images[photoIndex])}" alt="Foto ${photoIndex + 1} de ${name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" />${p.images.length > 1 ? `<button type="button" class="photo-prev" data-action="photo-prev" aria-label="Foto anterior">‹</button><button type="button" class="photo-next" data-action="photo-next" aria-label="Próxima foto">›</button><small class="photo-count">${photoIndex + 1}/${p.images.length}</small>` : ''}` : '';
+  const photo = p.images.length ? `<img src="${escapeHtml(p.images[photoIndex])}" alt="Foto ${photoIndex + 1} de ${name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" />${p.images.length > 1 ? `<button type="button" class="photo-prev" data-action="photo-prev" aria-label="Foto anterior">${photoArrow('left')}</button><button type="button" class="photo-next" data-action="photo-next" aria-label="Próxima foto">${photoArrow('right')}</button><small class="photo-count">${photoIndex + 1}/${p.images.length}</small>` : ''}` : '';
   return `<article class="property-card ${selected ? 'selected' : ''}" data-id="${escapeHtml(p.id)}" tabindex="-1" aria-label="${name}">
     <div class="card-main" data-action="select" tabindex="0" role="button" aria-label="Exibir ${name} no mapa">
       <div class="card-photo" ${p.images.length ? 'data-action="gallery" role="button" tabindex="0" aria-label="Abrir todas as fotos"' : ''}><span>⌂</span>${photo}${p.demo ? '<span class="card-demo">EXEMPLO</span>' : ''}</div>
@@ -186,6 +189,8 @@ const photoObserver = new IntersectionObserver(entries => {
   }
 }, { root: $('propertyList') });
 const photoDialog = $('photoDialog');
+$('galleryPrevious').innerHTML = photoArrow('left');
+$('galleryNext').innerHTML = photoArrow('right');
 let galleryProperty = null;
 let galleryIndex = 0;
 let galleryVersion = 0;
