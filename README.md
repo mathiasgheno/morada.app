@@ -1,6 +1,14 @@
 # Morada — Explorador de imóveis
 
-`bun run update:estabelecimentos` é incremental: ignora dados válidos para o raio e coordenadas atuais (inclusive resultados vazios). Use `bun run update:estabelecimentos --force` para refazer todos. A fila consulta um imóvel por vez, com intervalo de cinco segundos; cada sucesso é salvo imediatamente. Em HTTP 429, a fila inteira pausa conforme `Retry-After` (segundos ou data); sem esse cabeçalho, espera 60 s e aumenta exponencialmente até 15 minutos. O script mostra a porcentagem pendente, mantém o mesmo imóvel na fila e permite interromper com Ctrl+C. Falhas diferentes de 429 permanecem pendentes para a próxima execução.
+## Base de estabelecimentos offline
+
+Medição local em 15/11/2026: PBF de 863.683.302 bytes, integridade conferida com o MD5 oficial; extração em 252 s; base final com 14.819 pontos e 1,54 MiB. Consulta dos 28 imóveis: 22,8 ms incluindo primeira leitura, média de 4,8 ms por lote com a base em memória (20 repetições, Bun). São tempos de consulta, sem incluir renderização do mapa ou download inicial.
+
+Os scripts de inclusão e atualização consultam `estabelecimentos-locais.json`, sem rede. A base compacta é extraída do PBF Sudeste da Geofabrik, mantendo academias, farmácias, mercados e parques na caixa geográfica longitude -47.2 a -46.0 / latitude -24.2 a -23.1 (capital e entorno). Imóveis fora dessa cobertura são rejeitados explicitamente. Centros de áreas usam o centro da caixa envolvente, não a entrada do estabelecimento.
+
+Para reconstruir: crie um ambiente com `python3 -m venv .venv`, instale o leitor com `.venv/bin/pip install -r requirements-osm.txt` e execute `.venv/bin/python extrair-estabelecimentos.py dados/sudeste.osm.pbf`. Depois execute `bun run update:estabelecimentos --force`. O PBF não é versionado; a base compacta pode ser versionada. Fonte: https://download.geofabrik.de/south-america/brazil/sudeste.html · OpenStreetMap contributors, ODbL 1.0. A extração precisa percorrer o PBF e pode consumir memória; as consultas diárias usam somente o JSON compacto. As instruções históricas de fila/429 abaixo referem-se ao fluxo antigo Overpass; o fluxo offline não aplica essas esperas.
+
+`bun run update:estabelecimentos` é incremental: ignora dados válidos para o raio e coordenadas atuais (inclusive resultados vazios). Use `bun run update:estabelecimentos --force` para refazer todos após regenerar a base. Cada sucesso é salvo imediatamente; não há espera entre consultas locais. O script mostra a porcentagem pendente e permite interromper com Ctrl+C. Falhas permanecem pendentes para a próxima execução.
 
 Estabelecimentos são consultados antecipadamente com `bun run update:estabelecimentos` e salvos em `nearbyEstablishments` de cada imóvel (raio de 350 m). A interface lê somente esses dados locais. O cadastro por ID também tenta carregar os estabelecimentos; falhas ficam registradas para atualização posterior. “Atualizar região” relê os dados carregados na página; após atualizar o arquivo pelo terminal, recarregue a página.
 

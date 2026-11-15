@@ -48,7 +48,6 @@ try {
         }
       }
     }
-    if (property !== queue.at(-1)) await sleep(5000);
   }
   progress();
   console.log(`Atualização encerrada: ${failures} falhas; use --force para consultar também os imóveis já carregados.`);

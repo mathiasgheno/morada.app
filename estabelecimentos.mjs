@@ -1,4 +1,5 @@
 import { normalizeProperty } from './src/data.mjs';
+import { readFile } from 'node:fs/promises';
 import { RADIUS_METERS, poiQuery, parsePois, haversineMeters } from './src/geo.mjs';
 
 export function retryDelay(value, attempt = 0, now = Date.now()) {
@@ -13,7 +14,30 @@ export function dadosLocaisValidos(property) {
   return Boolean(data?.checkedAt && !data.error && data.radius === RADIUS_METERS && Array.isArray(data.items) && coordinates && data.coordinates?.lat === coordinates.lat && data.coordinates?.lng === coordinates.lng);
 }
 
+let localDatabase;
 export async function consultarEstabelecimentos(properties) {
+  if (!localDatabase) {
+    const data = JSON.parse(await readFile(new URL('./estabelecimentos-locais.json', import.meta.url), 'utf8'));
+    if (!Array.isArray(data.items) || !Array.isArray(data.bounds)) throw new Error('Base local inválida');
+    localDatabase = data;
+  }
+  return consultarNaBase(properties, localDatabase);
+}
+
+export function consultarNaBase(properties, database) {
+  return properties.map(property => {
+    const center = normalizeProperty(property).coordinates;
+    if (!center) throw new Error(`Imóvel ${property.id}: coordenadas ausentes`);
+    const [west, south, east, north] = database.bounds;
+    const marginLat = RADIUS_METERS / 110000;
+    const marginLng = marginLat / Math.cos(center.lat * Math.PI / 180);
+    if (center.lng - marginLng < west || center.lng + marginLng > east || center.lat - marginLat < south || center.lat + marginLat > north) throw new Error(`Imóvel ${property.id}: fora da cobertura da base local`);
+    const items = database.items.filter(poi => Math.abs(poi.lat - center.lat) <= marginLat && Math.abs(poi.lng - center.lng) <= marginLng && haversineMeters(center, poi) <= RADIUS_METERS);
+    return { radius: RADIUS_METERS, coordinates: center, checkedAt: new Date().toISOString(), source: database.source, dataGeneratedAt: database.generatedAt, items, error: null };
+  });
+}
+
+export async function consultarEstabelecimentosOverpass(properties) {
   const coordinates = properties.map(property => normalizeProperty(property).coordinates);
   const bodies = coordinates.filter(Boolean).map(point => poiQuery(point).split(';(')[1]?.split(');out center;')[0]);
   if (!bodies.length) throw new Error('Coordenadas ausentes');
