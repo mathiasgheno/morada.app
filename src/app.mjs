@@ -264,8 +264,20 @@ function openVideo(property) {
   $('videoPlayer').replaceChildren(iframe);
   videoPropertyId = property.id;
   videoDialog.showModal();
+  $('videoTitle').focus({ preventScroll: true });
 }
 $('closeVideo').addEventListener('click', () => videoDialog.close());
+videoDialog.addEventListener('cancel', event => {
+  event.preventDefault();
+  videoDialog.close();
+});
+document.addEventListener('keydown', event => {
+  if (videoDialog.open && event.key === 'Escape') {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    videoDialog.close();
+  }
+}, true);
 videoDialog.addEventListener('click', event => {
   const bounds = videoDialog.getBoundingClientRect();
   if (event.target === videoDialog && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) videoDialog.close();
