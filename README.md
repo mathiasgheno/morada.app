@@ -1,5 +1,9 @@
 # Morada — Explorador de imóveis
 
+## Anotações pessoais
+
+“Anotar” em cada card abre um comentário com salvamento automático no localStorage (`morada.notes.v1`), separado do JSON da API. Texto vazio remove a anotação. “Minhas anotações” permite exportar/importar backup JSON versionado. Conflitos de texto exigem uma decisão antes de substituir; dados existentes são preservados por padrão. O armazenamento pertence à origem (protocolo, domínio e porta), normalmente sobrevive a reinícios, mas pode ser apagado pelo navegador. Exporte backups regularmente; o arquivo pode conter informações pessoais. Falhas de armazenamento são apresentadas na modal e não confirmadas como salvamento.
+
 ## Favoritos pessoais
 
 Use `bun run favorito 893631548` para marcar, `bun run favorito 893631548 --remove` para desmarcar e `bun run favorito --list` para listar. Os IDs ficam em `favoritos.json`, separado dos dados do anúncio, com trava e gravação atômica. Recarregue a página para mostrar as estrelas douradas. Os favoritos sempre aparecem no topo, respeitando a ordenação escolhida dentro dos grupos de favoritos e demais imóveis. O checkbox “Somente favoritos” restringe a lista e o mapa aos favoritos. As estrelas são indicativas, não botões de gravação. Não depende de localStorage nem de endpoint de escrita.

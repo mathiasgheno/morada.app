@@ -1,5 +1,6 @@
 import { extractProperties, sortProperties, dateText, brl, availabilityColor } from './data.mjs';
 import { CATEGORIES, RADIUS_METERS, calculateWalkability, distanceText } from './geo.mjs';
+import { initNotes } from './notes-ui.mjs';
 
 const $ = id => document.getElementById(id);
 const state = {
@@ -14,6 +15,7 @@ const state = {
 };
 let map, propertyLayer, poiLayer, metroLayer, radiusLayer, metroRenderer;
 const referencePoint = [-23.556866, -46.661231];
+const propertyNotes = initNotes({ onChange: () => renderCards(), getProperty: id => state.properties.find(property => property.id === id) });
 const propertyMarkers = new Map();
 let hoveredPropertyId = null;
 function highlightProperty(id) {
@@ -142,6 +144,7 @@ function cardHtml(p) {
         <p class="card-costs">${p.total !== null ? 'Total mensal informado' : 'Total não informado'}${p.price !== null ? ` · Aluguel: ${escapeHtml(brl(p.price))}` : ''}${p.condo !== null ? ` · Condomínio: ${escapeHtml(brl(p.condo))}` : ''}</p>
       </div>
     </div>
+    <div class="card-note-action"><button type="button" data-action="notes" class="note-button ${propertyNotes.has(p.id) ? 'has-note' : ''}" aria-label="${propertyNotes.has(p.id) ? 'Editar anotação' : 'Adicionar anotação'}" title="${propertyNotes.has(p.id) ? 'Editar sua anotação' : 'Adicionar anotação pessoal'}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 4V5a2 2 0 0 1 2-2Z"/><path d="M7 8h10M7 12h7"/></svg>${propertyNotes.has(p.id) ? 'Anotado' : 'Anotar'}</button></div>
     <div class="card-meta">
       ${p.area !== null ? `<span>▤ ${escapeHtml(p.area)} m²</span>` : ''}
       ${p.bedrooms !== null ? `<span>◻ ${escapeHtml(p.bedrooms)} quarto(s)</span>` : ''}
@@ -592,6 +595,7 @@ $('propertyList').addEventListener('click', event => {
   const card = event.target.closest('.property-card');
   if (!button || !card) return;
   const id = card.dataset.id;
+  if (button.dataset.action === 'notes') { propertyNotes.open(id); return; }
   if (button.dataset.action === 'gallery') {
     openGallery(state.properties.find(property => property.id === id));
     return;

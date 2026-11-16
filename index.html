@@ -44,6 +44,7 @@
             </div>
             <div class="sidebar-toolbar">
               <span id="listingCount">Carregando imóveis…</span>
+              <button id="notesTools" class="notes-tools" type="button">Minhas anotações</button>
               <input id="jsonInput" type="file" accept=".json,application/json" hidden />
             </div>
           </div>
@@ -101,6 +102,19 @@
         </main>
       </div>
     </div>
+    <dialog id="notesDialog" class="notes-dialog" aria-labelledby="noteTitle">
+      <div class="video-heading"><strong id="noteTitle">Anotação</strong><button id="closeNotes" type="button" aria-label="Fechar anotação">✕</button></div>
+      <label for="noteText">Seu comentário sobre o imóvel</label>
+      <textarea id="noteText" rows="8" maxlength="20000" placeholder="O que você achou? Pontos positivos, dúvidas, detalhes da visita…"></textarea>
+      <p id="noteSaveStatus" role="status"></p>
+      <small>Salvo somente neste navegador. Use “Minhas anotações” para exportar um backup. Apague o texto para remover a anotação.</small>
+    </dialog>
+    <dialog id="notesBackupDialog" class="notes-dialog" aria-labelledby="notesBackupTitle">
+      <div class="video-heading"><strong id="notesBackupTitle">Minhas anotações</strong><button id="closeNotesBackup" type="button" aria-label="Fechar opções de backup">✕</button></div>
+      <p>As anotações ficam neste navegador, separadas dos dados dos anúncios. Limpar os dados do site ou trocar domínio/porta pode deixá-las indisponíveis. Exporte para guardar uma cópia.</p>
+      <div class="notes-backup-actions"><button id="exportNotes" type="button">Exportar backup JSON</button><button id="importNotesButton" type="button">Importar backup JSON</button><input id="importNotes" type="file" accept=".json,application/json" hidden></div>
+      <p id="notesBackupStatus" role="status"></p>
+    </dialog>
     <dialog id="photoDialog" class="photo-dialog" aria-labelledby="photoTitle">
       <div class="video-heading"><strong id="photoTitle">Fotos do imóvel</strong><button id="closePhotos" type="button" aria-label="Fechar fotos">✕</button></div>
       <div class="photo-stage"><button id="galleryPrevious" type="button" aria-label="Foto anterior">‹</button><div id="galleryImage"></div><button id="galleryNext" type="button" aria-label="Próxima foto">›</button></div>
