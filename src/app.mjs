@@ -153,7 +153,7 @@ function cardHtml(p) {
       ${score ? `<span class="card-score">↟ ${score.score}/100 estimado</span>` : ''}
     </div>
     <div class="card-availability"><span>◷ Disponibilidade</span><strong>${escapeHtml(dateText(p))}</strong></div>
-    <div class="card-actions"><button type="button" class="action-score" data-action="score" ${!p.coordinates ? 'disabled title="Coordenadas não disponíveis"' : ''}>Calcular índice ↗</button>${propertyVideo(p) ? '<button type="button" class="card-video" data-action="video">▶ Vídeo</button>' : ''}${safeLink(p.url) ? `<a class="listing-link" href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" title="Abrir anúncio no QuintoAndar" aria-label="Abrir anúncio no QuintoAndar">Anúncio ↗</a>` : ''}</div>
+    <div class="card-actions"><button type="button" class="action-score" data-action="score" ${!p.coordinates ? 'disabled title="Coordenadas não disponíveis"' : ''}>Calcular índice ↗</button>${propertyVideo(p) ? '<button type="button" class="card-video" data-action="video">▶ Vídeo</button>' : ''}${safeLink(p.url) ? `<a class="listing-link" href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" title="Abrir anúncio no ${p.origem === 'viva-real' ? 'Viva Real' : 'QuintoAndar'}" aria-label="Abrir anúncio no ${p.origem === 'viva-real' ? 'Viva Real' : 'QuintoAndar'}">Anúncio ↗</a>` : ''}</div>
   </article>`;
 }
 const imageCache = new Map();
@@ -289,7 +289,7 @@ videoDialog.addEventListener('close', () => {
 function listingDot(id) {
   const result = state.listings[id];
   const label = result?.status === 'active' ? 'Anúncio acessível' : result?.status === 'inactive' ? 'Anúncio indisponível (404/410)' : 'Disponibilidade do anúncio não confirmada';
-  const title = `${label}${result?.checkedAt ? ` · Verificado às ${new Date(result.checkedAt).toLocaleTimeString('pt-BR')}` : ''}`;
+  const title = `${label}${result?.checkedAt ? ` · Verificado em ${new Date(result.checkedAt).toLocaleString('pt-BR')}` : ''}${result?.method === 'browser-page-access' ? ' · Viva Real: última consulta na importação, sem atualização automática' : ''}`;
   return `<span class="listing-status ${result?.status || 'unknown'}" role="img" aria-label="${escapeHtml(title)}" title="${escapeHtml(title)}"></span>`;
 }
 let checkingListings = false;

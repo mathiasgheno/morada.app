@@ -142,7 +142,7 @@ export function normalizeProperty(raw, index = 0) {
   const area = firstValidNumber(raw, ['area', 'areaM2', 'size', 'totalArea', 'usableArea', 'squareMeters', 'm2', 'areaUtil']);
   const bedrooms = firstValidNumber(raw, ['bedrooms', 'beds', 'rooms', 'bedroomCount', 'quartos']);
   const bathrooms = firstValidNumber(raw, ['bathrooms', 'baths', 'bathroomCount', 'banheiros']);
-  const parking = firstValidNumber(raw, ['parkingSpots', 'parkingSpaces', 'parking', 'garageSpaces', 'vagas']);
+  const parking = firstValidNumber(raw, ['parkingSlots', 'parkingSpots', 'parkingSpaces', 'parking', 'garageSpaces', 'vagas']);
   let availableAt = parseDate(pick(raw, ['availableFrom', 'availableAt', 'availabilityDate', 'availableDate', 'dateAvailable', 'moveInDate', 'movingDate', 'possibleMovingDate', 'vacantDate', 'dateAvailability', 'availability.date', 'availability.availableFrom', 'availability.moveInDate', 'availability.expectedDate'], plain));
   let dateEstimated = false;
   const movingDate = raw.listings?.find(listing => listing.businessContext === 'RENT')?.relistingDetailsDTO?.possibleMovingDate;
@@ -161,8 +161,9 @@ export function normalizeProperty(raw, index = 0) {
     }
   }
   const title = text(pick(raw, ['title', 'name', 'headline', 'property.title', 'shortTitle'], plain)) || `${propertyType} ${addr.neighborhood ? `em ${addr.neighborhood}` : `#${id}`}`;
-  const url = text(pick(raw, ['url', 'listingUrl', 'link', 'propertyUrl', 'canonicalUrl'], v => typeof v === 'string' && /^https?:\/\//.test(v))) || (id.match(/^\d{7,}$/) ? `https://www.quintoandar.com.br/imovel/${id}` : null);
-  return { id, title, propertyType, ...addr, coordinates, price, kind, condo, total, area, bedrooms, bathrooms, parking,
+  const origem = raw.origem || 'quinto-andar';
+  const url = text(pick(raw, ['url', 'listingUrl', 'link', 'propertyUrl', 'canonicalUrl'], v => typeof v === 'string' && /^https?:\/\//.test(v))) || (origem === 'viva-real' ? raw.shortUrl : id.match(/^\d{7,}$/) ? `https://www.quintoandar.com.br/imovel/${id}` : null);
+  return { id, origem, title, propertyType, ...addr, coordinates, price, kind, condo, total, area, bedrooms, bathrooms, parking,
     acceptsPets: raw.acceptPets === true, furnished: raw.isFurnished === true,
     doorman24: raw.doormanType === 'horas24',
     partyRoom: [raw.installations, raw.amenities, raw.comfortCommodities, raw.practicalityCommodities].filter(Array.isArray).flat().some(item => item.key === 'SALAO_DE_FESTAS' && item.value === 'SIM'),

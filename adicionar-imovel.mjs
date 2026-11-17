@@ -34,7 +34,7 @@ try {
     if (returnedId == null && !(Number.isFinite(data.lat) && Number.isFinite(data.lng) && (data.address || data.neighborhood) && ('rentValue' in data || 'salePrice' in data))) {
       throw new Error('Resposta sem dados reconhecíveis de imóvel; lista preservada.');
     }
-    const property = { ...data, id: Number(id) };
+    const property = { ...data, id: Number(id), origem: 'quinto-andar' };
     try { [property.nearbyEstablishments] = await consultarEstabelecimentos([property]); }
     catch (error) {
       property.nearbyEstablishments = { radius: 350, items: [], checkedAt: null, error: error.message };

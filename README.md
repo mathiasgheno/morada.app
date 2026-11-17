@@ -1,5 +1,11 @@
 # Morada — Explorador de imóveis
 
+## Cadastro por origem
+
+`bun run add:imovel:viva-real "URL_DO_ANUNCIO"` abre Chrome visível, normaliza o anúncio com o scraper isolado, carrega estabelecimentos locais e acrescenta ao JSON com `origem: "viva-real"` e URL original. Requer Chrome instalado; o Bun resolve o pacote Playwright automaticamente. Anúncios existentes não são duplicados. Uma colisão de ID com outra origem é rejeitada para preservar favoritos e anotações. Bloqueios e falhas da extração preservam a lista. O cadastro antigo segue com `bun run add:imovel ID`, usando `origem: "quinto-andar"`.
+
+O status do Viva Real representa o acesso ao anúncio verificado na importação, com data no tooltip, e não a disponibilidade garantida para locação. Não se abre Chrome automaticamente a cada minuto: a checagem periódica e a atualização de vídeos do QuintoAndar ignoram registros Viva Real. Os campos ausentes permanecem nulos.
+
 ## Anotações pessoais
 
 “Anotar” em cada card abre um comentário com salvamento automático no localStorage (`morada.notes.v1`), separado do JSON da API. Texto vazio remove a anotação. “Minhas anotações” permite exportar/importar backup JSON versionado. Conflitos de texto exigem uma decisão antes de substituir; dados existentes são preservados por padrão. O armazenamento pertence à origem (protocolo, domínio e porta), normalmente sobrevive a reinícios, mas pode ser apagado pelo navegador. Exporte backups regularmente; o arquivo pode conter informações pessoais. Falhas de armazenamento são apresentadas na modal e não confirmadas como salvamento.

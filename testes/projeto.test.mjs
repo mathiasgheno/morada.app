@@ -3,6 +3,14 @@ import assert from 'node:assert/strict';
 import { extractProperties, sortProperties, normalizeProperty, parseDate, toNumber, dateText } from '../src/data.mjs';
 import { haversineMeters, parsePois, categorize, parseMetro, calculateWalkability, poiQuery, metroQuery } from '../src/geo.mjs';
 
+test('Normaliza origem e preserva link do Viva Real sem gerar link QuintoAndar', () => {
+  const property = normalizeProperty({ id: 2909076148, origem: 'viva-real', shortUrl: 'https://www.vivareal.com.br/imovel/exemplo-id-2909076148/', rentValue: 2800, parkingSlots: 0 });
+  assert.equal(property.origem, 'viva-real');
+  assert.equal(property.parking, 0);
+  assert.equal(property.url, 'https://www.vivareal.com.br/imovel/exemplo-id-2909076148/');
+  assert.equal(normalizeProperty({ id: 893631548 }).origem, 'quinto-andar');
+});
+
 test('Reconhece hospitais sem classificar clínicas como hospitais ou alterar o índice', () => {
   assert.equal(categorize({ amenity: 'hospital' }), 'hospital');
   assert.equal(categorize({ healthcare: 'hospital' }), 'hospital');

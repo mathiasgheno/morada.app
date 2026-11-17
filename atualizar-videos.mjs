@@ -12,7 +12,7 @@ try {
   locked = true;
   const properties = JSON.parse(await readFile(file, 'utf8'));
   if (!Array.isArray(properties)) throw new Error('imoveis.json precisa conter uma lista');
-  const queue = [...properties];
+  const queue = properties.filter(property => property.origem !== 'viva-real');
   let failures = 0;
   await Promise.all(Array.from({ length: Math.min(5, queue.length) }, async () => {
     for (let property = queue.shift(); property; property = queue.shift()) {

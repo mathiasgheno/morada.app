@@ -6,6 +6,7 @@
     "test": "node --test testes/*.test.mjs",
     "update:metro": "bun atualizar-metro.mjs",
     "add:imovel": "bun adicionar-imovel.mjs",
+    "add:imovel:viva-real": "bun adicionar-imovel-viva-real.mjs",
     "update:videos": "bun atualizar-videos.mjs",
     "update:estabelecimentos": "bun atualizar-estabelecimentos.mjs",
     "favorito": "bun favorito.mjs"
