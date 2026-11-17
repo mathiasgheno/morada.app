@@ -6,6 +6,30 @@ const number = value => value !== null && value !== undefined && value !== '' &&
 const scalar = value => typeof value === 'string' || typeof value === 'number' ? value : null;
 const decode = value => value.replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 
+function flightRecords(text) {
+  const bytes = Buffer.from(text, 'utf8');
+  const records = [];
+  let offset = 0;
+  while (offset < bytes.length) {
+    const colon = bytes.indexOf(58, offset);
+    if (colon < 0) break;
+    if (!/^[\da-f]*$/i.test(bytes.subarray(offset, colon).toString())) break;
+    if (bytes[colon + 1] === 84) {
+      const comma = bytes.indexOf(44, colon + 2);
+      if (comma < 0) break;
+      const length = bytes.subarray(colon + 2, comma).toString();
+      if (!/^[\da-f]+$/i.test(length)) break;
+      offset = comma + 1 + parseInt(length, 16);
+      continue;
+    }
+    const newline = bytes.indexOf(10, colon + 1);
+    const end = newline < 0 ? bytes.length : newline;
+    try { records.push(JSON.parse(bytes.subarray(colon + 1, end).toString())); } catch {}
+    offset = end + 1;
+  }
+  return records;
+}
+
 function objects(root) {
   const result = [];
   const queue = [root];
@@ -32,9 +56,7 @@ export function extractVivaReal(html, inputUrl) {
   for (const match of html.matchAll(/self\.__next_f\.push\((\[[\s\S]*?\])\)/g)) {
     try { const chunk = JSON.parse(match[1]); if (chunk[0] === 1 && typeof chunk[1] === 'string') flight += chunk[1]; } catch {}
   }
-  for (const line of flight.split('\n')) {
-    try { roots.push(JSON.parse(line.slice(line.indexOf(':') + 1))); } catch {}
-  }
+  roots.push(...flightRecords(flight));
   for (const script of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
     if (!/application\/ld\+json|application\/json|__NEXT_DATA__/i.test(script[1])) continue;
     try { roots.push(JSON.parse(script[2])); }
@@ -154,6 +176,7 @@ async function readBrowser(url, args) {
     const html = await page.content();
     const visible = await page.evaluate(() => ({
       title: document.querySelector('h1')?.textContent || '', text: document.body.innerText,
+      photoCount: Number(document.querySelector('[aria-label="Galeria de fotos do imóvel"]')?.textContent.match(/(\d+)\s*fotos/)?.[1]) || null,
       images: [...document.querySelectorAll('[aria-label="Galeria de fotos do imóvel"] img')].map(image => ({ url: image.currentSrc || image.src, subtitle: image.alt || null })),
     }));
     const saveIndex = args.indexOf('--save-html');
@@ -182,6 +205,12 @@ async function main() {
     applyVisibleData(hydrated, { text: 'Valor total previsto\nR$ 3.625\n', title: '' });
     assert.equal(hydrated.totalCost, 3625);
     assert.equal(hydrated.status, null);
+    const longText = 'Descrição com acentuação: São Paulo\nOBS.: descrição longa sem quebra final';
+    const stream = `:HL["/style.css","style"]\na:T${Buffer.byteLength(longText).toString(16)},${longText}b:${JSON.stringify({ listing: modern })}\n`;
+    const textRecord = JSON.stringify([1, stream]);
+    const withDescription = extractVivaReal(`<script>self.__next_f.push(${textRecord})</script>`, url).property;
+    assert.equal(withDescription.images.length, 1);
+    assert.equal(withDescription.lat, -23.55);
     console.error('Testes do scraper passaram.');
     return;
   }
@@ -206,6 +235,7 @@ async function main() {
   if (visible) {
     applyVisibleData(result.property, visible);
     result.extracted = result.extracted || result.property.rentValue !== null || result.property.totalArea !== null;
+    if (visible.photoCount && (result.property.images?.length || 0) < visible.photoCount) throw new Error(`Galeria incompleta: ${result.property.images?.length || 0} de ${visible.photoCount} fotos. Importação cancelada; tente novamente ou revise o parser.`);
   }
   console.log(JSON.stringify(result.property, null, 2));
   if (!result.extracted) {
