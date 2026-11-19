@@ -15,6 +15,15 @@ const state = {
 };
 let map, propertyLayer, poiLayer, metroLayer, radiusLayer, metroRenderer;
 const referencePoint = [-23.556866, -46.661231];
+const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+let baseMapLayer;
+function updateBaseMapTheme() {
+  if (!map || !window.protomapsL) return;
+  if (baseMapLayer) map.removeLayer(baseMapLayer);
+  baseMapLayer = protomapsL.leafletLayer({ url: './sao-paulo.pmtiles', flavor: systemTheme.matches ? 'dark' : 'light', lang: 'pt', maxDataZoom: 15,
+    attribution: '&copy; OpenStreetMap contributors · Protomaps' }).addTo(map);
+}
+systemTheme.addEventListener('change', updateBaseMapTheme);
 const propertyNotes = initNotes({ onChange: () => renderCards(), getProperty: id => state.properties.find(property => property.id === id) });
 const propertyMarkers = new Map();
 let hoveredPropertyId = null;
@@ -49,8 +58,7 @@ function initMap() {
   map = L.map('map', { zoomControl: true, preferCanvas: true, zoomAnimation: false }).setView([-23.56, -46.65], 11);
   new ResizeObserver(() => map.invalidateSize({ pan: false })).observe($('map'));
   if (window.protomapsL) {
-    protomapsL.leafletLayer({ url: './sao-paulo.pmtiles', flavor: 'light', lang: 'pt', maxDataZoom: 15,
-      attribution: '&copy; OpenStreetMap contributors · Protomaps' }).addTo(map);
+    updateBaseMapTheme();
   } else {
     setStatus('Não foi possível carregar o renderizador do mapa local. Recarregue a página.');
   }

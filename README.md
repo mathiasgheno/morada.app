@@ -1,5 +1,7 @@
 # Morada — Explorador de imóveis
 
+O tema claro/escuro acompanha automaticamente a preferência do sistema operacional (`prefers-color-scheme`), inclusive quando ela muda com o site aberto. O mapa local usa o estilo correspondente do Protomaps; fotos e vídeos não são invertidos. Não há preferência manual salva no navegador.
+
 ## Cadastro por origem
 
 `bun run add:imovel:viva-real "URL_DO_ANUNCIO"` abre Chrome visível, normaliza o anúncio com o scraper isolado, carrega estabelecimentos locais e acrescenta ao JSON com `origem: "viva-real"` e URL original. Requer Chrome instalado; o Bun resolve o pacote Playwright automaticamente. Anúncios existentes não são duplicados. Uma colisão de ID com outra origem é rejeitada para preservar favoritos e anotações. Bloqueios e falhas da extração preservam a lista. O cadastro antigo segue com `bun run add:imovel ID`, usando `origem: "quinto-andar"`.

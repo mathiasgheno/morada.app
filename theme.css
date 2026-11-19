@@ -1,0 +1,68 @@
+:root{color-scheme:light dark}
+@media(prefers-color-scheme:dark){
+  :root{--ink:#e5ede8;--ink-muted:#a9bab0;--border:#35463d;--mint:#234b36;--green:#83dbad;--green-dark:#a0e8bf;--cream:#121b16;--paper:#1a2720;--shadow:0 5px 25px #0003;background:#101813}
+  body{background:#101813}
+  :root .sidebar,:root .sidebar-footer,:root .property-card,:root .explore-panel,:root .topbar{background:var(--paper);border-color:var(--border);color:var(--ink)}
+  :root .workspace{background:var(--cream)}
+  :root .property-card.selected{border-color:#65cd98;box-shadow:0 0 0 1px #65cd9830}
+  :root .card-title,:root .sidebar-toolbar,:root .score-main strong{color:var(--ink)}
+  :root .card-address,:root .card-costs,:root .card-meta,:root .card-type,:root .card-availability,:root .sort-wrap label,:root .hours-note,:root .metro-line-note,:root .workspace-heading p,:root .explore-topline p,:root .score-main p,:root .info-footer,:root .attribution-note{color:var(--ink-muted)}
+  :root .card-id,:root .sidebar-footer{color:#a4b6aa}
+  :root .card-price,:root .card-availability strong,:root .score-result,:root .upload-button{color:#8de1b2}
+  :root .card-price small,:root .score-result small{color:#b5c8bb}
+  :root .card-availability,:root .sidebar-toolbar{border-color:var(--border)}
+  :root .sort-wrap select,:root .search-box,:root .notes-dialog textarea{background:#142019;border-color:#40574a;color:var(--ink)}
+  :root .amenity-filters{color:#c4d7cb}
+  :root input[type=checkbox]{accent-color:#54b982}
+  :root .card-actions button,:root .listing-link,:root .note-button,:root .notes-tools,:root .official-link,:root .refresh-button,:root .expand-map,:root .clear-selection,:root .sidebar-toggle,:root .video-heading button{background:#243b2d;border-color:#466451;color:#b3e8c9}
+  :root .card-actions button:hover,:root .listing-link:hover,:root .notes-tools:hover,:root .note-button:hover,:root .official-link:hover,:root .refresh-button:hover,:root .expand-map:hover,:root .clear-selection:enabled:hover,:root .sidebar-toggle:hover{background:#31513d;color:#d2f5df}
+  :root .card-actions .action-score,:root .card-score{background:#244a34;color:#a3e9bf;border-color:#3c6a4d}
+  :root .note-button.has-note{background:#493e1b;color:#ffe08b;border-color:#8e7735}
+  :root .favorite-star{color:#ffdb78}
+  :root .score-row{background:#182c20;border-color:#354c3c}
+  :root .score-icon{background:#244b34;color:#a2e6bb}
+  :root .primary-button{background:#247c50;color:#fff}
+  :root .primary-button:hover{background:#309965}
+  :root .poi-category,:root .filter-chip,:root .nearby-hospital{background:#1c2b22;border-color:#476050;color:#c4dcca}
+  :root .poi-category-info{background:#1d2e24}
+  :root .poi-segment[aria-pressed=true]{background:#285239;color:#c0f1d2}
+  :root .poi-segment[aria-pressed=false]{color:#a8bbae}
+  :root .poi-segment:hover{background:#304d3b}
+  :root .poi-category-info .poi-segment:hover{background:transparent}
+  :root .poi-hours{border-color:#476050}
+  :root .category-counter{background:#2c4234;color:#d8ebdf}
+  :root .chip-icon.hospital,:root .chip-icon.pharmacy{background:#4e2832;color:#ffb1c2}
+  :root .chip-icon.bakery,:root .chip-icon.market{background:#493b23;color:#ffd18c}
+  :root .chip-icon.gym{background:#412e54;color:#dab5ff}
+  :root .chip-icon.park{background:#254a35;color:#a3e7ba}
+  :root .chip-icon.metro{background:#2a385a;color:#b1c7ff}
+  :root .map-container,:root .leaflet-container{background:#16231c;border-color:var(--border)}
+  :root .map-corner-note,:root .map-legend,:root .availability-legend{background:#19291ff2;border-color:#415649;color:#d2e2d8}
+  :root .legend-line{color:#d2e2d8}
+  :root .leaflet-bar a{background:#203127;color:#e0ece4;border-color:#476050}
+  :root .leaflet-bar a:hover{background:#304c3a}
+  :root .leaflet-bar a.leaflet-disabled{color:#83988a}
+  :root .leaflet-control-attribution{background:#15251de6;color:#b3c5b9}
+  :root .leaflet-control-attribution a,:root .attribution-note a{color:#9ddbb7}
+  :root .leaflet-popup-content-wrapper,:root .leaflet-popup-tip,:root .leaflet-tooltip{background:#203127;color:#e0ece4;border-color:#476050}
+  :root .popup-title{color:#e0ece4}
+  :root .popup-sub{color:#b4c8ba}
+  :root .leaflet-container a.leaflet-popup-close-button{color:#d0e0d6}
+  :root .reference-button,:root .reference-tooltip{background:#3c2332;color:#ffc0e2;border-color:#ed67af}
+  :root .reference-button:hover{background:#542e45}
+  :root .pin:not(.selected){background:#18271e}
+  :root .pin.pin-favorite:not(.selected){background:#18271e;color:#ffdf83}
+  :root .photo-prev,:root .photo-next,:root .photo-stage>button{background:#263d30;color:#d7efdf}
+  :root .photo-prev:hover,:root .photo-next:hover,:root .photo-stage>button:enabled:hover{background:#3b7552;color:#fff}
+  :root .notes-dialog,:root .video-dialog{background:#19271f;color:var(--ink)}
+  :root .notes-dialog p,:root .notes-dialog small,:root .video-note{color:var(--ink-muted)}
+  :root .video-dialog>a{color:#a6e4be}
+  :root .notes-backup-actions>button{background:#2a4935;border-color:#4a6a55;color:#c2edcf}
+  :root .data-notice{background:#3d341e;border-color:#806a32;color:#f0d28d}
+  :root .data-notice.error{background:#41292a;border-color:#855052;color:#ffc3c3}
+  :root .empty-state{color:#b6c7bc}
+  :root .empty-state strong{color:#e0ece4}
+  :root .sidebar-resize{background:#314438}
+  :root .sidebar-resize:hover,:root .sidebar-resize:focus-visible{background:#65cd98}
+  :root .property-list{scrollbar-color:#4c7059 transparent}
+}
