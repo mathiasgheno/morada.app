@@ -20,7 +20,7 @@ let baseMapLayer;
 function updateBaseMapTheme() {
   if (!map || !window.protomapsL) return;
   if (baseMapLayer) map.removeLayer(baseMapLayer);
-  baseMapLayer = protomapsL.leafletLayer({ url: './sao-paulo.pmtiles', flavor: systemTheme.matches ? 'dark' : 'light', lang: 'pt', maxDataZoom: 15,
+  baseMapLayer = protomapsL.leafletLayer({ url: './sao-paulo.pmtiles', flavor: systemTheme.matches ? 'black' : 'light', lang: 'pt', maxDataZoom: 15,
     attribution: '&copy; OpenStreetMap contributors · Protomaps' }).addTo(map);
 }
 systemTheme.addEventListener('change', updateBaseMapTheme);

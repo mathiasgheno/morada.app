@@ -37,6 +37,7 @@
   :root .chip-icon.park{background:#254a35;color:#a3e7ba}
   :root .chip-icon.metro{background:#2a385a;color:#b1c7ff}
   :root .map-container,:root .leaflet-container{background:#19191c;border-color:var(--border)}
+  :root .leaflet-tile-pane{filter:brightness(1.5)}
   :root .map-corner-note,:root .map-legend,:root .availability-legend{background:#222226f2;border-color:#48484f;color:#e0e0e5}
   :root .legend-line{color:#e0e0e5}
   :root .leaflet-bar a{background:#29292e;color:#ededee;border-color:#48484f}
