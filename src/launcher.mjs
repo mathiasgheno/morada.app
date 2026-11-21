@@ -4,6 +4,50 @@ let projects = [];
 let editing = null;
 let duplicateFrom = null;
 let previewMap, previewMarker;
+let addressTimer, addressController;
+let addressVersion = 0;
+let addressLoading = false;
+let submitting = false;
+function cancelAddressLookup() {
+  clearTimeout(addressTimer);
+  addressController?.abort();
+  addressVersion++;
+  addressLoading = false;
+  $('saveProject').disabled = submitting;
+  $('referenceAddressStatus').textContent = '';
+}
+function updateAddressFromPoint() {
+  cancelAddressLookup();
+  const [lat, lng] = point();
+  $('referenceAddress').value = '';
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -24.2 || lat > -23.1 || lng < -47.2 || lng > -46) {
+    $('referenceAddressStatus').textContent = 'Escolha um ponto na região de São Paulo.';
+    return;
+  }
+  const version = addressVersion;
+  addressLoading = true;
+  $('saveProject').disabled = true;
+  $('referenceAddressStatus').textContent = 'Buscando endereço…';
+  addressTimer = setTimeout(async () => {
+    addressController = new AbortController();
+    try {
+      const response = await fetch(`/api/endereco?lat=${lat}&lng=${lng}`, { signal: addressController.signal });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      if (version !== addressVersion) return;
+      $('referenceAddress').value = result.address;
+      $('referenceAddressStatus').textContent = 'Endereço aproximado · Photon / OpenStreetMap. Ajuste se necessário.';
+    } catch (error) {
+      if (version !== addressVersion) return;
+      $('referenceAddressStatus').textContent = `${error.message} Preencha o endereço manualmente.`;
+    } finally {
+      if (version === addressVersion) {
+        addressLoading = false;
+        $('saveProject').disabled = submitting;
+      }
+    }
+  }, 450);
+}
 async function request(path, body, method = 'POST') {
   const response = await fetch(path, body ? { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(15000) } : { cache: 'no-store', signal: AbortSignal.timeout(15000) });
   const data = await response.json();
@@ -25,6 +69,7 @@ function syncMarker() {
   previewMap.panTo(point(), { animate: false });
 }
 function openForm(project, duplicate = false) {
+  cancelAddressLookup();
   editing = project && !duplicate ? project.id : null;
   duplicateFrom = duplicate ? project.id : null;
   $('projectForm').reset();
@@ -49,6 +94,8 @@ function newProjectFromMenu() {
 window.addEventListener('morada:new-project', newProjectFromMenu);
 if (window.__moradaNewProjectRequested) newProjectFromMenu();
 for (const id of ['closeProjectDialog', 'cancelProjectDialog']) $(id).addEventListener('click', () => $('projectDialog').close());
+$('projectDialog').addEventListener('close', cancelAddressLookup);
+$('referenceAddress').addEventListener('input', cancelAddressLookup);
 $('referenceDetails').addEventListener('toggle', () => {
   if (!$('referenceDetails').open) return;
   if (!window.L || !window.protomapsL) { $('referenceMap').textContent = 'Mapa indisponível. Você pode informar as coordenadas abaixo.'; return; }
@@ -56,14 +103,16 @@ $('referenceDetails').addEventListener('toggle', () => {
     previewMap = L.map('referenceMap').setView(point(), 14);
     protomapsL.leafletLayer({ url: '/sao-paulo.pmtiles', flavor: matchMedia('(prefers-color-scheme: dark)').matches ? 'black' : 'light', lang: 'pt', attribution: '&copy; OpenStreetMap contributors · Protomaps' }).addTo(previewMap);
     previewMarker = L.circleMarker(point(), { radius: 9, fillColor: '#e63c8d', color: '#fff', weight: 3, fillOpacity: 1 }).addTo(previewMap);
-    previewMap.on('click', event => { $('referenceLat').value = event.latlng.lat.toFixed(6); $('referenceLng').value = event.latlng.lng.toFixed(6); previewMarker.setLatLng(event.latlng); });
+    previewMap.on('click', event => { $('referenceLat').value = event.latlng.lat.toFixed(6); $('referenceLng').value = event.latlng.lng.toFixed(6); previewMarker.setLatLng(event.latlng); updateAddressFromPoint(); });
   }
   previewMap.invalidateSize();
   syncMarker();
 });
-for (const id of ['referenceLat', 'referenceLng']) $(id).addEventListener('change', syncMarker);
+for (const id of ['referenceLat', 'referenceLng']) $(id).addEventListener('change', () => { syncMarker(); updateAddressFromPoint(); });
 $('projectForm').addEventListener('submit', async event => {
   event.preventDefault();
+  if (addressLoading) return;
+  submitting = true;
   $('saveProject').disabled = true;
   $('projectFormStatus').textContent = 'Salvando projeto…';
   try {
@@ -71,7 +120,7 @@ $('projectForm').addEventListener('submit', async event => {
     $('projectDialog').close();
     await load();
   } catch (error) { $('projectFormStatus').textContent = error.message; }
-  finally { $('saveProject').disabled = false; }
+  finally { submitting = false; $('saveProject').disabled = addressLoading; }
 });
 $('projectGrid').addEventListener('click', async event => {
   const action = event.target.closest('[data-action]');

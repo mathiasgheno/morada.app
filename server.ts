@@ -2,9 +2,11 @@ import { resolve, sep } from 'node:path';
 import { verificarAnuncios } from './anuncios';
 import { lerAnotacoes, salvarAnotacoes } from './anotacoes.mjs';
 import { criarRepositorioProjetos } from './projetos.mjs';
+import { criarConsultaEnderecos } from './enderecos.mjs';
 
 const root = import.meta.dir;
 const projects = criarRepositorioProjetos();
+const consultarEndereco = criarConsultaEnderecos();
 await projects.inicializar();
 const jsonHeaders = { 'Cache-Control': 'no-store' };
 function permittedWrite(request) {
@@ -23,6 +25,13 @@ const server = Bun.serve({
     let pathname;
     try { pathname = decodeURIComponent(new URL(request.url).pathname); }
     catch { return new Response('URL inválida', { status: 400 }); }
+    if (pathname === '/api/endereco') {
+      if (request.method !== 'GET') return new Response(null, { status: 405 });
+      const parameters = new URL(request.url).searchParams;
+      if (!parameters.get('lat') || !parameters.get('lng')) return Response.json({ error: 'Informe latitude e longitude.' }, { status: 400 });
+      try { return Response.json(await consultarEndereco(Number(parameters.get('lat')), Number(parameters.get('lng'))), { headers: jsonHeaders }); }
+      catch (error) { return Response.json({ error: error.message }, { status: 400, headers: jsonHeaders }); }
+    }
     const projectRoute = /^\/api\/projetos(?:\/([a-z0-9-]+)(?:\/(imoveis))?)?$/.exec(pathname);
     if (projectRoute) {
       try {

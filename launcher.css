@@ -9,3 +9,4 @@ dialog{width:min(600px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overfl
 @media(max-width:520px){.field-pair{grid-template-columns:1fr;gap:0}.coordinate-fields{grid-template-columns:1fr 1fr;gap:12px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 @media(prefers-color-scheme:dark){.brand img{filter:brightness(1.12)}}
+form input:disabled{opacity:1;color:var(--muted);cursor:not-allowed;background:var(--soft)}#referenceAddressStatus:empty{display:none}
