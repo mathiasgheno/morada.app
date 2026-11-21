@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
-use tauri::menu::{Menu, MenuItem, Submenu};
+use tauri::menu::{AboutMetadata, Menu, MenuItem, PredefinedMenuItem, Submenu};
 
 fn launcher_window(app: &tauri::AppHandle, new_project: bool) -> Result<tauri::WebviewWindow, String> {
     if let Some(window) = app.get_webview_window("main") {
@@ -53,6 +53,24 @@ fn main() {
         .setup(|app| {
             // Mantém os menus nativos de edição e gerenciamento das janelas.
             let menu = Menu::default(app.handle())?;
+            let about = PredefinedMenuItem::about(app, Some("About Morada"), Some(AboutMetadata {
+                name: Some("Morada".into()),
+                version: Some(app.package_info().version.to_string()),
+                icon: app.default_window_icon().cloned(),
+                ..Default::default()
+            }))?;
+            // O menu padrão não inclui o ícone nos metadados da janela About.
+            for (index, item) in menu.items()?.iter().enumerate() {
+                if let Some(submenu) = item.as_submenu() {
+                    if (cfg!(target_os = "macos") && index == 0)
+                        || (!cfg!(target_os = "macos") && submenu.text()? == "Help")
+                    {
+                        submenu.remove_at(0)?;
+                        submenu.insert(&about, 0)?;
+                        break;
+                    }
+                }
+            }
             let new_project = MenuItem::with_id(app, "new-project", "Novo projeto…", true, Some("CmdOrCtrl+N"))?;
             let project_menu = Submenu::with_items(app, "Projeto", true, &[&new_project])?;
             #[cfg(target_os = "macos")]
