@@ -1,8 +1,35 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
-use tauri::menu::{AboutMetadata, Menu, MenuItem, PredefinedMenuItem, Submenu};
+use tauri::menu::{AboutMetadata, CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use std::sync::Mutex;
+
+struct ThemeMenu {
+    light: CheckMenuItem<tauri::Wry>,
+    dark: CheckMenuItem<tauri::Wry>,
+    system: CheckMenuItem<tauri::Wry>,
+}
+
+fn update_theme_menu(app: &tauri::AppHandle, mode: &str) -> Result<(), String> {
+    let theme = match mode {
+        "light" => Some(tauri::Theme::Light),
+        "dark" => Some(tauri::Theme::Dark),
+        "system" => None,
+        _ => return Err("Tema inválido".into()),
+    };
+    if let Some(menu) = app.try_state::<ThemeMenu>() {
+        menu.light.set_checked(mode == "light").map_err(|e| e.to_string())?;
+        menu.dark.set_checked(mode == "dark").map_err(|e| e.to_string())?;
+        menu.system.set_checked(mode == "system").map_err(|e| e.to_string())?;
+    }
+    app.set_theme(theme);
+    Ok(())
+}
+
+#[tauri::command]
+async fn set_theme_mode(app: tauri::AppHandle, mode: String) -> Result<(), String> {
+    update_theme_menu(&app, &mode)
+}
 
 fn update_active_window(app: &tauri::AppHandle, label: &str) {
     if let Ok(mut active) = app.state::<Mutex<String>>().lock() {
@@ -56,7 +83,7 @@ async fn open_project(app: tauri::AppHandle, window: tauri::WebviewWindow, id: S
 fn main() {
     tauri::Builder::default()
         .manage(Mutex::new(String::from("main")))
-        .invoke_handler(tauri::generate_handler![open_project])
+        .invoke_handler(tauri::generate_handler![open_project, set_theme_mode])
         .setup(|app| {
             // Mantém os menus nativos de edição e gerenciamento das janelas.
             let menu = Menu::default(app.handle())?;
@@ -85,6 +112,26 @@ fn main() {
             menu.insert(&project_menu, 1)?;
             #[cfg(not(target_os = "macos"))]
             menu.insert(&project_menu, 0)?;
+            let theme_menu = ThemeMenu {
+                light: CheckMenuItem::with_id(app, "theme-light", "Light", true, false, None::<&str>)?,
+                dark: CheckMenuItem::with_id(app, "theme-dark", "Dark", true, false, None::<&str>)?,
+                system: CheckMenuItem::with_id(app, "theme-system", "Sistema", true, true, None::<&str>)?,
+            };
+            let visual = Submenu::with_items(app, "Visual", true, &[&theme_menu.light, &theme_menu.dark, &theme_menu.system])?;
+            let mut view_menu = None;
+            for item in menu.items()? {
+                if let Some(submenu) = item.as_submenu() {
+                    if submenu.text()? == "View" { view_menu = Some(submenu.clone()); break; }
+                }
+            }
+            if let Some(view) = view_menu {
+                view.append(&PredefinedMenuItem::separator(app)?)?;
+                view.append(&visual)?;
+            } else {
+                let view = Submenu::with_items(app, "View", true, &[&visual])?;
+                menu.insert(&view, menu.items()?.len().saturating_sub(2))?;
+            }
+            app.manage(theme_menu);
             app.set_menu(menu)?;
             app.manage(add_property);
             Ok(())
@@ -95,6 +142,13 @@ fn main() {
             }
         })
         .on_menu_event(|app, event| {
+            if let Some(mode) = event.id().as_ref().strip_prefix("theme-") {
+                if update_theme_menu(app, mode).is_ok() {
+                    for window in app.webview_windows().values() {
+                        let _ = window.eval(&format!("window.__moradaThemeRequested = '{mode}'; window.moradaTheme?.setTheme('{mode}');"));
+                    }
+                }
+            }
             if event.id().as_ref() == "add-property" {
                 let label = app.state::<Mutex<String>>().lock().ok().map(|label| label.clone());
                 if let Some(label) = label.filter(|label| label.starts_with("project-")) {

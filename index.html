@@ -6,6 +6,8 @@
     <meta name="color-scheme" content="light dark" />
     <meta name="description" content="Compare imóveis, disponibilidade, mobilidade e serviços próximos em um mapa aberto." />
     <title>Morada · Explorador de imóveis</title>
+    <script src="/src/theme.mjs"></script>
+    <link rel="stylesheet" href="/ui.css">
     <link rel="icon" href="/assets/morada-symbol.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://tile.openstreetmap.org" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -45,6 +47,7 @@
               </select>
             </div>
             <label class="favorites-top-toggle"><input id="favoritesOnTop" type="checkbox" role="switch" checked> Exibir favoritos no topo</label>
+            <label class="favorites-top-toggle"><input id="showArchived" type="checkbox" role="switch"> Exibir arquivados</label>
             <div class="sidebar-toolbar">
               <span id="listingCount">Carregando imóveis…</span>
               <button id="notesTools" class="notes-tools" type="button">Minhas anotações</button>

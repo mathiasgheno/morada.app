@@ -1,0 +1,7 @@
+*{-webkit-user-select:none;user-select:none}
+input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:text}
+img{-webkit-user-drag:none}
+:root[data-theme="light"]{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark}
+:root.theme-changing,:root.theme-changing :is(body,aside,main,section,article,dialog,button,a,input,textarea,select,summary,h1,h2,h3,p,span){transition:background-color .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease}
+@media(prefers-reduced-motion:reduce){:root.theme-changing,:root.theme-changing *{transition:none!important}}

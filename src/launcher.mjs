@@ -3,7 +3,13 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '
 let projects = [];
 let editing = null;
 let duplicateFrom = null;
-let previewMap, previewMarker;
+let previewMap, previewMarker, previewLayer;
+function updatePreviewTheme() {
+  if (!previewMap) return;
+  if (previewLayer) previewMap.removeLayer(previewLayer);
+  previewLayer = protomapsL.leafletLayer({ url: '/sao-paulo.pmtiles', flavor: window.moradaTheme.dark ? 'black' : 'light', lang: 'pt', attribution: '&copy; OpenStreetMap contributors · Protomaps' }).addTo(previewMap);
+}
+window.addEventListener('morada:theme-change', updatePreviewTheme);
 let addressTimer, addressController;
 let addressVersion = 0;
 let addressLoading = false;
@@ -110,7 +116,7 @@ $('referenceDetails').addEventListener('toggle', () => {
   if (!window.L || !window.protomapsL) { $('referenceMap').textContent = 'Mapa indisponível. Você pode informar as coordenadas abaixo.'; return; }
   if (!previewMap) {
     previewMap = L.map('referenceMap').setView(point(), 14);
-    protomapsL.leafletLayer({ url: '/sao-paulo.pmtiles', flavor: matchMedia('(prefers-color-scheme: dark)').matches ? 'black' : 'light', lang: 'pt', attribution: '&copy; OpenStreetMap contributors · Protomaps' }).addTo(previewMap);
+    updatePreviewTheme();
     previewMarker = L.circleMarker(point(), { radius: 9, fillColor: '#e63c8d', color: '#fff', weight: 3, fillOpacity: 1 }).addTo(previewMap);
     previewMap.on('click', event => { $('referenceLat').value = event.latlng.lat.toFixed(6); $('referenceLng').value = event.latlng.lng.toFixed(6); previewMarker.setLatLng(event.latlng); updateAddressFromPoint(); });
   }

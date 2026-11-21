@@ -9,6 +9,7 @@ imoveis.json.tmp
 imoveis.json.status-*.tmp
 imoveis.json.notes-*.tmp
 imoveis.json.walkability-*.tmp
+imoveis.json.archive-*.tmp
 *.osm.pbf
 .venv/
 __pycache__/

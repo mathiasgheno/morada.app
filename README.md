@@ -32,7 +32,9 @@ Esta etapa valida a execução local; ainda não é uma distribuição independe
 
 As anotações agora ficam em `note: { text, updatedAt }` em cada registro do `imoveis.json`, compartilhadas entre web e desktop. A edição salva automaticamente no arquivo pelo servidor Bun, com trava e gravação atômica, preservando outros campos. A interface só informa que salvou após a confirmação do servidor. O botão “Minhas anotações” continua exportando/importando o formato de backup anterior; IDs ausentes são rejeitados sem gravação parcial. Dados antigos no localStorage não são apagados nem importados automaticamente. Bibliotecas de CDN, fotos, vídeos e consulta de status continuam dependendo de internet.
 
-O tema claro/escuro acompanha automaticamente a preferência do sistema operacional (`prefers-color-scheme`), inclusive quando ela muda com o site aberto. O mapa local usa o estilo correspondente do Protomaps; fotos e vídeos não são invertidos. Não há preferência manual salva no navegador.
+O menu nativo `View → Visual` oferece `Light`, `Dark` e `Sistema` (padrão). A escolha visual é lembrada no localStorage da origem, compartilhada entre suas janelas; as anotações continuam exclusivamente no JSON. Em Sistema, mudanças do sistema operacional são acompanhadas automaticamente. Launcher, projetos e mapas seguem o tema escolhido, com transição de cores de 180 ms e respeito a movimento reduzido; fotos e vídeos não são invertidos.
+
+A interface bloqueia seleção de texto, preservando a edição e seleção nos inputs e textareas. O botão ao lado do ID copia somente o identificador. Anotar, vídeo, anúncio e arquivamento ficam na parte inferior do card. “Arquivar” grava `archived` e `archivedAt` no JSON do projeto; “Desarquivar” reverte esse estado. O toggle “Exibir arquivados” começa desligado e inclui os arquivados na lista e no mapa, respeitando os demais filtros. A rota local `PUT /api/arquivamento` (também sob `/projetos/ID/`) recebe `{ id, archived }` e preserva os outros campos com trava e gravação atômica.
 
 ## Cadastro por origem
 

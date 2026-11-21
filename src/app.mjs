@@ -17,15 +17,14 @@ const state = {
 let map, propertyLayer, poiLayer, metroLayer, radiusLayer, metroRenderer;
 let referencePoint = [-23.556866, -46.661231];
 let reference = { name: 'Trabalho · Paulista, 2300', address: 'Av. Paulista, 2300 — 19º andar, conj. 192 · São Paulo - SP' };
-const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 let baseMapLayer;
 function updateBaseMapTheme() {
   if (!map || !window.protomapsL) return;
   if (baseMapLayer) map.removeLayer(baseMapLayer);
-  baseMapLayer = protomapsL.leafletLayer({ url: './sao-paulo.pmtiles', flavor: systemTheme.matches ? 'black' : 'light', lang: 'pt', maxDataZoom: 15,
+  baseMapLayer = protomapsL.leafletLayer({ url: './sao-paulo.pmtiles', flavor: window.moradaTheme.dark ? 'black' : 'light', lang: 'pt', maxDataZoom: 15,
     attribution: '&copy; OpenStreetMap contributors · Protomaps' }).addTo(map);
 }
-systemTheme.addEventListener('change', updateBaseMapTheme);
+window.addEventListener('morada:theme-change', updateBaseMapTheme);
 const propertyNotes = initNotes({ onChange: updateNoteIndicators, getProperty: id => state.properties.find(property => property.id === id) });
 function updateNoteIndicators() {
   $('propertyList').querySelectorAll('[data-action="notes"]').forEach(button => {
@@ -142,6 +141,7 @@ function renderPropertyMarkers(fitAll = false) {
 function filtered({ ignoreListingStatus = false } = {}) {
   const search = state.query.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const results = sortProperties(state.properties.filter(p => {
+    if (p.raw.archived === true && !$('showArchived').checked) return false;
     if ($('favoritesOnly').checked && !state.favorites.has(p.id)) return false;
     if (!ignoreListingStatus && $('activeListingsOnly').checked) {
       const listing = state.listings[p.id];
@@ -166,13 +166,12 @@ function cardHtml(p) {
     <div class="card-main" data-action="select" tabindex="0" role="button" aria-label="Exibir ${name} no mapa">
       <div class="card-photo" ${p.images.length ? 'data-action="gallery" role="button" tabindex="0" aria-label="Abrir todas as fotos"' : ''}><span>⌂</span>${photo}${p.demo ? '<span class="card-demo">EXEMPLO</span>' : ''}</div>
       <div class="card-details">
-        <div class="card-kicker"><span class="card-type">${escapeHtml(p.propertyType.toUpperCase())}</span><span class="card-id">${state.favorites.has(p.id) ? '<span class="favorite-star" role="img" aria-label="Imóvel favorito" title="Favorito">★</span> ' : ''}${listingDot(p.id)} #${escapeHtml(p.id)}</span></div>
+        <div class="card-kicker"><span class="card-type">${escapeHtml(p.propertyType.toUpperCase())}</span><span class="card-id">${state.favorites.has(p.id) ? '<span class="favorite-star" role="img" aria-label="Imóvel favorito" title="Favorito">★</span> ' : ''}${listingDot(p.id)} #${escapeHtml(p.id)}<button type="button" class="copy-id" data-action="copy-id" aria-label="Copiar ID ${escapeHtml(p.id)}" title="Copiar ID"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></button></span></div>
         <h3 class="card-title">${name}</h3><p class="card-address">${escapeHtml([p.street, p.city].filter(Boolean).join(' · ') || 'Endereço não informado')}</p>
         <div class="card-price ${p.total === null && p.price === null ? 'card-price-muted' : ''}">${escapeHtml(brl(p.total ?? p.price))}${p.kind === 'Aluguel' ? '<small> /mês</small>' : ''}</div>
         <p class="card-costs">${p.total !== null ? 'Total mensal informado' : 'Total não informado'}${p.price !== null ? ` · Aluguel: ${escapeHtml(brl(p.price))}` : ''}${p.condo !== null ? ` · Condomínio: ${escapeHtml(brl(p.condo))}` : ''}</p>
       </div>
     </div>
-    <div class="card-note-action"><button type="button" data-action="notes" class="note-button ${propertyNotes.has(p.id) ? 'has-note' : ''}" aria-label="${propertyNotes.has(p.id) ? 'Editar anotação' : 'Adicionar anotação'}" title="${propertyNotes.has(p.id) ? 'Editar sua anotação' : 'Adicionar anotação pessoal'}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 4V5a2 2 0 0 1 2-2Z"/><path d="M7 8h10M7 12h7"/></svg>${propertyNotes.has(p.id) ? 'Anotado' : 'Anotar'}</button></div>
     <div class="card-meta">
       ${p.area !== null ? `<span>▤ ${escapeHtml(p.area)} m²</span>` : ''}
       ${p.bedrooms !== null ? `<span>◻ ${escapeHtml(p.bedrooms)} quarto(s)</span>` : ''}
@@ -181,7 +180,7 @@ function cardHtml(p) {
       ${score ? `<span class="card-score">↟ ${score.score}/100 estimado</span>` : ''}
     </div>
     <div class="card-availability"><span>◷ Disponibilidade</span><strong>${escapeHtml(dateText(p))}</strong></div>
-    <div class="card-actions">${propertyVideo(p) ? '<button type="button" class="card-video" data-action="video">▶ Vídeo</button>' : ''}${safeLink(p.url) ? `<a class="listing-link" href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" title="Abrir anúncio no ${p.origem === 'viva-real' ? 'Viva Real' : 'QuintoAndar'}" aria-label="Abrir anúncio no ${p.origem === 'viva-real' ? 'Viva Real' : 'QuintoAndar'}">Anúncio ↗</a>` : ''}</div>
+    <div class="card-actions"><button type="button" data-action="notes" class="note-button ${propertyNotes.has(p.id) ? 'has-note' : ''}" aria-label="${propertyNotes.has(p.id) ? 'Editar anotação' : 'Adicionar anotação'}" title="${propertyNotes.has(p.id) ? 'Editar sua anotação' : 'Adicionar anotação pessoal'}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6 4V5a2 2 0 0 1 2-2Z"/><path d="M7 8h10M7 12h7"/></svg>${propertyNotes.has(p.id) ? 'Anotado' : 'Anotar'}</button>${propertyVideo(p) ? '<button type="button" class="card-video" data-action="video">▶ Vídeo</button>' : ''}${safeLink(p.url) ? `<a class="listing-link" href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" title="Abrir anúncio no ${p.origem === 'viva-real' ? 'Viva Real' : 'QuintoAndar'}" aria-label="Abrir anúncio no ${p.origem === 'viva-real' ? 'Viva Real' : 'QuintoAndar'}">Anúncio ↗</a>` : ''}<button type="button" class="archive-button" data-action="archive" aria-pressed="${p.raw.archived === true}">${p.raw.archived === true ? 'Desarquivar' : 'Arquivar'}</button></div>
   </article>`;
 }
 const imageCache = new Map();
@@ -680,11 +679,51 @@ $('propertyList').addEventListener('focusout', event => {
   const card = event.target.closest('.property-card');
   if (card && !card.contains(event.relatedTarget)) highlightProperty(null);
 });
-$('propertyList').addEventListener('click', event => {
+$('propertyList').addEventListener('click', async event => {
   const button = event.target.closest('[data-action]');
   const card = event.target.closest('.property-card');
   if (!button || !card) return;
   const id = card.dataset.id;
+  if (button.dataset.action === 'copy-id') {
+    try {
+      try {
+        if (!navigator.clipboard?.writeText) throw new Error('Clipboard indisponível');
+        await navigator.clipboard.writeText(id);
+      } catch {
+        const input = document.createElement('textarea');
+        input.value = id;
+        input.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+        document.body.append(input);
+        input.select();
+        const copied = document.execCommand('copy');
+        input.remove();
+        button.focus({ preventScroll: true });
+        if (!copied) throw new Error('Não foi possível copiar');
+      }
+      button.dataset.copied = 'true';
+      button.title = 'ID copiado';
+      button.setAttribute('aria-label', 'ID copiado');
+      setTimeout(() => { delete button.dataset.copied; button.title = 'Copiar ID'; button.setAttribute('aria-label', `Copiar ID ${id}`); }, 1400);
+    } catch { button.title = 'Não foi possível copiar o ID'; }
+    return;
+  }
+  if (button.dataset.action === 'archive') {
+    const property = state.properties.find(property => property.id === id);
+    button.disabled = true;
+    try {
+      const response = await fetch('./api/arquivamento', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, archived: property.raw.archived !== true }), signal: AbortSignal.timeout(15000) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Falha ao arquivar');
+      property.raw.archived = result.archived;
+      if (result.archivedAt) property.raw.archivedAt = result.archivedAt;
+      else delete property.raw.archivedAt;
+      button.textContent = result.archived ? 'Desarquivar' : 'Arquivar';
+      button.setAttribute('aria-pressed', String(result.archived));
+      applyAmenityFilters({ preserveCards: true });
+    } catch (error) { showNotice(`Não foi possível atualizar o arquivamento: ${error.message}`, true); }
+    finally { button.disabled = false; }
+    return;
+  }
   if (button.dataset.action === 'notes') { propertyNotes.open(id); return; }
   if (button.dataset.action === 'gallery') {
     openGallery(state.properties.find(property => property.id === id));
@@ -741,6 +780,7 @@ document.querySelectorAll('[data-amenity]').forEach(input => input.addEventListe
 window.addEventListener('pageshow', applyAmenityFilters);
 $('activeListingsOnly').addEventListener('change', applyAmenityFilters);
 $('favoritesOnly').addEventListener('change', applyAmenityFilters);
+$('showArchived').addEventListener('change', () => applyAmenityFilters({ preserveCards: true }));
 $('favoritesOnTop').addEventListener('change', () => renderCards());
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshListings(); });
 $('sortSelect').addEventListener('change', event => { state.sort = event.target.value; renderCards(); });
@@ -755,7 +795,9 @@ $('refreshButton').addEventListener('click', () => {
   const p = state.selected;
   if (!p?.coordinates) return;
   state.pois.delete(p.id);
-  state.scores.delete(p.id);
+  const score = propertyWalkability(p.raw);
+  if (score) state.scores.set(p.id, score);
+  else state.scores.delete(p.id);
   state.metros.delete(getMetroCacheKey(p));
   selectProperty(p.id);
 });
