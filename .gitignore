@@ -11,3 +11,6 @@ imoveis.json.tmp
 __pycache__/
 favoritos.json.lock
 favoritos.json.tmp
+src-tauri/target/
+src-tauri/gen/
+desktop-dist/

@@ -3,6 +3,7 @@
   "scripts": {
     "dev": "bun --watch server.ts",
     "start": "bun server.ts",
+    "desktop:dev": "bun desktop/dev.mjs",
     "test": "node --test testes/*.test.mjs",
     "update:metro": "bun atualizar-metro.mjs",
     "add:imovel": "bun adicionar-imovel.mjs",
@@ -10,5 +11,8 @@
     "update:videos": "bun atualizar-videos.mjs",
     "update:estabelecimentos": "bun atualizar-estabelecimentos.mjs",
     "favorito": "bun favorito.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.6"
   }
 }

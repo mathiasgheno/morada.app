@@ -1,0 +1,23 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Morada",
+  "version": "0.1.0",
+  "identifier": "app.morada.desktop",
+  "build": {
+    "beforeDevCommand": "bun desktop/dev-server.mjs",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "bun desktop/prepare.mjs",
+    "frontendDist": "../desktop-dist"
+  },
+  "app": {
+    "windows": [{
+      "title": "Morada",
+      "width": 1440,
+      "height": 960,
+      "minWidth": 900,
+      "minHeight": 600
+    }],
+    "security": { "csp": null }
+  },
+  "bundle": { "active": false }
+}

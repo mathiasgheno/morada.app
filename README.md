@@ -1,5 +1,15 @@
 # Morada — Explorador de imóveis
 
+## Desktop com Tauri — primeiro protótipo
+
+Na branch `feature/desktop`, execute `bun install` e `bun run desktop:dev` para abrir a aplicação em uma janela Tauri. Requer Bun, Rust/Cargo e as dependências de desenvolvimento do Tauri para seu sistema: https://v2.tauri.app/start/prerequisites/. O launcher também encontra o Cargo instalado em `~/.cargo/bin`.
+
+O Tauri inicia automaticamente o servidor Bun na porta 1420 e aguarda sua disponibilidade. A versão web permanece disponível pelos comandos anteriores, na porta 8000. Fechar a janela encerra a sessão desktop. Os arquivos de imóveis, favoritos, mapa e estabelecimentos continuam nos caminhos atuais e não são removidos ou migrados.
+
+Esta etapa valida a execução local; ainda não é uma distribuição independente. O servidor Bun e as ferramentas precisam estar instalados. A preparação de assets para build é uma cópia privada dos dados atuais em `desktop-dist/`, ignorada pelo Git, e o empacotamento está desativado. A versão de produção ainda precisa integrar a API de anúncios, o auxiliar Bun e o armazenamento próprio antes de ser distribuída. Não publique essa cópia com seus imóveis.
+
+As anotações do navegador não são migradas automaticamente: o armazenamento da webview é separado. Exporte em “Minhas anotações” na versão web e importe na janela desktop se quiser transferi-las. Bibliotecas de CDN, fotos, vídeos e consulta de status continuam dependendo de internet.
+
 O tema claro/escuro acompanha automaticamente a preferência do sistema operacional (`prefers-color-scheme`), inclusive quando ela muda com o site aberto. O mapa local usa o estilo correspondente do Protomaps; fotos e vídeos não são invertidos. Não há preferência manual salva no navegador.
 
 ## Cadastro por origem
