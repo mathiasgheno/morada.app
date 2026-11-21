@@ -6,7 +6,7 @@ const $ = id => document.getElementById(id);
 const state = {
   properties: [], selected: null, query: '', sort: 'price-asc', photos: new Map(),
   pois: new Map(), scores: new Map(), metros: new Map(), poisPromises: new Map(),
-  version: 0, metro: null, metroNetwork: null, activePois: [], metroVisible: true,
+  version: 0, metro: null, metroNetwork: null, activePois: [], metroVisible: true, nearbyVisible: true,
   visibleCategories: new Set(Object.keys(CATEGORIES)),
   amenities: new Set(),
   hiddenMetroLines: new Set(),
@@ -324,6 +324,7 @@ async function refreshListings() {
 }
 function renderCards() {
   $('clearSelection').disabled = !state.selected;
+  $('toggleNearby').disabled = !state.selected;
   $('refreshButton').disabled = !state.selected?.coordinates;
   const results = filtered();
   $('listingCount').textContent = `${results.length} ${results.length === 1 ? 'imóvel encontrado' : 'imóveis encontrados'}`;
@@ -353,11 +354,13 @@ function scoreStatus(property) {
 }
 function renderPois() {
   if (poiLayer) poiLayer.clearLayers();
+  $('toggleNearby').setAttribute('aria-pressed', String(state.nearbyVisible));
+  $('toggleNearby').textContent = state.nearbyVisible ? '◉ Ocultar estabelecimentos' : '◉ Mostrar estabelecimentos';
   const counters = Object.fromEntries(Object.keys(CATEGORIES).flatMap(key => [[key, 0], [`${key}-24h`, 0]]));
   for (const poi of state.activePois) {
     counters[poi.category]++;
     if (poi.is24Hours === true) counters[`${poi.category}-24h`]++;
-    if (!map || !(state.visibleCategories.has(poi.category) || (poi.is24Hours === true && state.visibleCategories.has(`${poi.category}-24h`)))) continue;
+    if (!map || !state.nearbyVisible || !(state.visibleCategories.has(poi.category) || (poi.is24Hours === true && state.visibleCategories.has(`${poi.category}-24h`)))) continue;
     const cat = CATEGORIES[poi.category];
     const icon = L.divIcon({ html: `<div class="poi-pin ${poi.category}">${cat.glyph}</div>`, className: '', iconSize: [29, 29], iconAnchor: [14, 14] });
     const marker = L.marker([poi.lat, poi.lng], { icon });
@@ -461,10 +464,17 @@ function clearPropertySelection() {
   setStatus('Selecione um imóvel para explorar a região');
 }
 $('clearSelection').addEventListener('click', clearPropertySelection);
+$('toggleNearby').addEventListener('click', () => {
+  if (!state.selected) return;
+  state.nearbyVisible = !state.nearbyVisible;
+  map?.closePopup();
+  renderPois();
+});
 function selectProperty(id, options = {}) {
   const property = state.properties.find(p => p.id === id);
   if (!property) return;
   state.selected = property;
+  state.nearbyVisible = true;
   const token = ++state.version;
   state.activePois = state.pois.get(id) || [];
   state.metro = state.metroNetwork || (property.coordinates ? state.metros.get(getMetroCacheKey(property)) || null : null);

@@ -2,6 +2,8 @@
 @media(prefers-color-scheme:dark){
   :root{--ink:#ededee;--ink-muted:#afb0b6;--border:#39393e;--mint:#303035;--green:#c8c9ce;--green-dark:#ededee;--cream:#141416;--paper:#1d1d20;--shadow:0 5px 25px #0003;background:#101012}
   body{background:#101012}
+  :root .toggle-nearby{background:#2b2b30;border-color:#494950;color:#e0e0e5}
+  :root .toggle-nearby:enabled:hover{background:#3b3b42;color:#fff}
   :root .sidebar,:root .sidebar-footer,:root .property-card,:root .explore-panel,:root .topbar{background:var(--paper);border-color:var(--border);color:var(--ink)}
   :root .workspace{background:var(--cream)}
   :root .property-card.selected{border-color:#65cd98;box-shadow:0 0 0 1px #65cd9830}
