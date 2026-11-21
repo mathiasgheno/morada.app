@@ -190,10 +190,17 @@ export function extractProperties(json) {
   return entries.map(normalizeProperty).filter(Boolean);
 }
 
-export function sortProperties(properties, sort = 'price-asc', reference = null) {
+export function sortProperties(properties, sort = 'price-asc', reference = null, scores = null) {
   const descending = sort.endsWith('desc');
   const byDate = sort.startsWith('date');
-  const value = property => sort.startsWith('distance') ? (property.coordinates && reference ? haversineMeters(reference, property.coordinates) : null) : byDate ? property.availableAt : property.total ?? property.price;
+  const value = property => {
+    if (sort.startsWith('score')) {
+      const score = scores ? scores.get(property.id)?.score : property.raw?.walkability?.score ?? property.walkability?.score;
+      return Number.isFinite(score) ? score : null;
+    }
+    if (sort.startsWith('distance')) return property.coordinates && reference ? haversineMeters(reference, property.coordinates) : null;
+    return byDate ? property.availableAt : property.total ?? property.price;
+  };
   return [...properties].sort((a, b) => {
     const av = value(a);
     const bv = value(b);

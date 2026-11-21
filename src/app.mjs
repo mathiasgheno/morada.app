@@ -150,7 +150,7 @@ function filtered({ ignoreListingStatus = false } = {}) {
     if (![...state.amenities].every(key => p[key])) return false;
     const text = [p.id, p.title, p.street, p.neighborhood, p.city, p.state].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return text.includes(search);
-  }), state.sort, referencePoint ? { lat: referencePoint[0], lng: referencePoint[1] } : null);
+  }), state.sort, referencePoint ? { lat: referencePoint[0], lng: referencePoint[1] } : null, state.scores);
   return !$('favoritesOnTop').checked ? results : results.sort((first, second) => Number(state.favorites.has(second.id)) - Number(state.favorites.has(first.id)));
 }
 function photoArrow(direction) {

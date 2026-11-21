@@ -6,6 +6,8 @@ O índice é processado automaticamente ao adicionar imóveis do QuintoAndar ou 
 
 Os cards e o painel abaixo do mapa mostram a nota automaticamente, sem botão de cálculo e sem nova consulta de rede. Caches antigos de estabelecimentos com raio de 350 m são aproveitados, filtrando os pontos fora dos 300 m; novos cadastros e consultas locais usam 300 m. `bun run update:caminhabilidade [--project ID]` preenche os índices de um conjunto existente sem consultar serviços externos. Ao abrir um JSON antigo, a interface calcula localmente os índices ainda não salvos.
 
+A ordenação oferece maior e menor caminhabilidade, mantendo índices indisponíveis no fim e respeitando o toggle de favoritos no topo. Os toggles abaixo da ordenação ficam lado a lado quando há espaço e quebram de linha em listas estreitas.
+
 ## Projetos e launcher
 
 `bun run desktop:dev` abre o launcher em `/launcher.html`. “Novo projeto” cria uma busca vazia; “Duplicar” copia imóveis, favoritos e anotações para uma busca independente. “Configurar” permite alterar o nome e o ponto de referência, inclusive posicionando-o no mapa. São Paulo continua sendo a cidade fixa. No desktop, abrir um projeto cria uma janela própria; abrir o mesmo projeto novamente foca a janela existente. Fechar uma janela de projeto mantém o launcher aberto.

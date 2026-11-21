@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { calculatePropertyWalkability, propertyWalkability, localPois } from '../src/walkability.mjs';
+import { sortProperties } from '../src/data.mjs';
+
+test('Ordenação por caminhabilidade preserva zero e deixa indisponíveis no fim nos dois sentidos', () => {
+  const properties = [{ id: 'sem', raw: { walkability: { score: 100 } } }, { id: 'alto' }, { id: 'zero' }, { id: 'medio' }];
+  const scores = new Map([['alto', { score: 100 }], ['zero', { score: 0 }], ['medio', { score: 35 }]]);
+  assert.deepEqual(sortProperties(properties, 'score-asc', null, scores).map(p => p.id), ['zero', 'medio', 'alto', 'sem']);
+  assert.deepEqual(sortProperties(properties, 'score-desc', null, scores).map(p => p.id), ['alto', 'medio', 'zero', 'sem']);
+  assert.equal(properties[0].id, 'sem');
+});
 
 test('Índice usa apenas 300 m, aceita cache anterior de 350 m e não confunde dados ausentes com zero', () => {
   const coordinates = { lat: -23.55, lng: -46.65 };
