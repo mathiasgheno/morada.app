@@ -11,7 +11,7 @@ export function retryDelay(value, attempt = 0, now = Date.now()) {
 export function dadosLocaisValidos(property) {
   const data = property.nearbyEstablishments;
   const coordinates = normalizeProperty(property).coordinates;
-  return Boolean(data?.checkedAt && !data.error && data.radius === RADIUS_METERS && Array.isArray(data.items) && coordinates && data.coordinates?.lat === coordinates.lat && data.coordinates?.lng === coordinates.lng);
+  return Boolean(data?.checkedAt && !data.error && Number.isFinite(data.radius) && data.radius >= RADIUS_METERS && Array.isArray(data.items) && coordinates && data.coordinates?.lat === coordinates.lat && data.coordinates?.lng === coordinates.lng);
 }
 
 let localDatabase;

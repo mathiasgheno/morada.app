@@ -11,7 +11,7 @@ export const CATEGORIES = {
   market: { label: 'Mercados', weight: 0.35, glyph: '▣' },
   park: { label: 'Parques', weight: 0.25, glyph: '♣' },
 };
-export const RADIUS_METERS = 350;
+export const RADIUS_METERS = 300;
 
 export function haversineMeters(a, b) {
   const p1 = a.lat * Math.PI / 180, p2 = b.lat * Math.PI / 180;
@@ -106,10 +106,9 @@ export function calculateWalkability(coordinates, pois) {
   let score = 0;
   for (const [key, { weight }] of Object.entries(CATEGORIES)) {
     if (weight === 0) continue;
-    const distances = pois.filter(p => p.category === key).map(p => haversineMeters(coordinates, p));
+    const distances = pois.filter(p => p.category === key).map(p => haversineMeters(coordinates, p)).filter(distance => distance <= RADIUS_METERS);
     const nearest = distances.length ? Math.min(...distances) : null;
-    // Até 300m = 100 pontos para a categoria; a 1500m = 0.
-    const grade = nearest === null ? 0 : Math.max(0, Math.min(100, 100 * (1500 - Math.max(300, nearest)) / 1200));
+    const grade = nearest === null ? 0 : 100;
     score += grade * weight;
     categories[key] = { count: distances.length, nearest, grade: Math.round(grade) };
   }

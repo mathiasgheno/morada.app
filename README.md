@@ -1,5 +1,11 @@
 # Morada — Explorador de imóveis
 
+## Índice automático de caminhabilidade
+
+O índice é processado automaticamente ao adicionar imóveis do QuintoAndar ou VivaReal e ao atualizar seus estabelecimentos. O resultado fica em `walkability` no JSON: nota, categorias, raio de 300 m, coordenadas, origem e data dos dados utilizados. Mercados valem 35 pontos, parques 25, farmácias 20 e academias 20, pela presença de pelo menos um local da categoria em até 300 m em linha reta. Dados locais ausentes, com erro ou de outras coordenadas resultam em `null`, não zero.
+
+Os cards e o painel abaixo do mapa mostram a nota automaticamente, sem botão de cálculo e sem nova consulta de rede. Caches antigos de estabelecimentos com raio de 350 m são aproveitados, filtrando os pontos fora dos 300 m; novos cadastros e consultas locais usam 300 m. `bun run update:caminhabilidade [--project ID]` preenche os índices de um conjunto existente sem consultar serviços externos. Ao abrir um JSON antigo, a interface calcula localmente os índices ainda não salvos.
+
 ## Projetos e launcher
 
 `bun run desktop:dev` abre o launcher em `/launcher.html`. “Novo projeto” cria uma busca vazia; “Duplicar” copia imóveis, favoritos e anotações para uma busca independente. “Configurar” permite alterar o nome e o ponto de referência, inclusive posicionando-o no mapa. São Paulo continua sendo a cidade fixa. No desktop, abrir um projeto cria uma janela própria; abrir o mesmo projeto novamente foca a janela existente. Fechar uma janela de projeto mantém o launcher aberto.
@@ -50,7 +56,7 @@ Use `bun run favorito 893631548` para marcar, `bun run favorito 893631548 --remo
 
 Cada categoria aparece em um único chip com total e quantidade 24h. O total inclui os 24h. Nome/total e 24h são botões mutuamente exclusivos: ativar um desativa o outro; clicar no ativo oculta a categoria. Hospitais mostram somente contadores, sem controles de filtro.
 
-Hospitais são extraídos por `amenity=hospital` ou `healthcare=hospital`, sem incluir clínicas automaticamente. Aparecem automaticamente nos estabelecimentos próximos ao selecionar um imóvel, em até 350 m. A seção “O que tem ao redor?” mostra contadores de Hospitais e Hospitais 24h, sem checkbox ou filtro próprio. Os horários são preservados como nas outras categorias; 24h só é confirmado por `opening_hours=24/7`. Isso não confirma a existência de pronto-socorro ou disponibilidade de atendimento. Hospitais não alteram o índice de caminhabilidade.
+Hospitais são extraídos por `amenity=hospital` ou `healthcare=hospital`, sem incluir clínicas automaticamente. Aparecem automaticamente nos estabelecimentos próximos ao selecionar um imóvel, em até 300 m. A seção “O que tem ao redor?” mostra contadores de Hospitais e Hospitais 24h, sem checkbox ou filtro próprio. Os horários são preservados como nas outras categorias; 24h só é confirmado por `opening_hours=24/7`. Isso não confirma a existência de pronto-socorro ou disponibilidade de atendimento. Hospitais não alteram o índice de caminhabilidade.
 
 A base inclui também padarias (`shop=bakery`) e preserva `opening_hours` como `openingHours`. `is24Hours=true` confirma apenas a expressão explícita `24/7`; outras expressões ou horários ausentes ficam não confirmados (`null`). Os filtros 24h usam os mesmos estabelecimentos sem duplicar marcadores. Para mostrar somente 24h, desmarque o filtro geral da categoria. Padarias não alteram os pesos do índice de caminhabilidade. Os horários são um retrato do cadastro OSM, não confirmação em tempo real.
 
@@ -62,7 +68,7 @@ Para reconstruir: crie um ambiente com `python3 -m venv .venv`, instale o leitor
 
 `bun run update:estabelecimentos` é incremental: ignora dados válidos para o raio e coordenadas atuais (inclusive resultados vazios). Use `bun run update:estabelecimentos --force` para refazer todos após regenerar a base. Cada sucesso é salvo imediatamente; não há espera entre consultas locais. O script mostra a porcentagem pendente e permite interromper com Ctrl+C. Falhas permanecem pendentes para a próxima execução.
 
-Estabelecimentos são consultados antecipadamente com `bun run update:estabelecimentos` e salvos em `nearbyEstablishments` de cada imóvel (raio de 350 m). A interface lê somente esses dados locais. O cadastro por ID também tenta carregar os estabelecimentos; falhas ficam registradas para atualização posterior. “Atualizar região” relê os dados carregados na página; após atualizar o arquivo pelo terminal, recarregue a página.
+Estabelecimentos são consultados antecipadamente com `bun run update:estabelecimentos` e salvos em `nearbyEstablishments` de cada imóvel (raio de 300 m). A interface lê somente esses dados locais, aproveitando também caches anteriores de 350 m e filtrando os excedentes. O cadastro por ID também tenta carregar os estabelecimentos; falhas ficam registradas para atualização posterior. “Atualizar região” relê os dados carregados na página; após atualizar o arquivo pelo terminal, recarregue a página.
 
 `bun run update:videos` consulta as mídias de todos os imóveis com até cinco consultas simultâneas. Cada imóvel recebe `video` com `hasVideo` (true/false ou null se não confirmado), `items` (plataforma, ID, URL e estado de processamento), `checkedAt` e eventual `error`. Falhas preservam vídeos previamente conhecidos. Novos cadastros via `bun run add:imovel ID` consultam o vídeo automaticamente. O arquivo é gravado atomicamente, usando a mesma trava da inclusão por ID.
 
@@ -161,7 +167,7 @@ Imóveis sem coordenadas ainda aparecem na lista, mas não podem ter índice cal
 
 ### Índice de caminhabilidade: não é o Walk Score oficial
 
-A API oficial do **Walk Score** exige chave, integração via servidor, e documenta suporte a **Estados Unidos e Canadá** — portanto não foi integrada diretamente num front-end brasileiro. O botão **Calcular índice** calcula uma aproximação independente com dados públicos do OSM:
+O índice é uma aproximação independente com dados públicos do OSM, calculada automaticamente:
 
 | Categoria | Peso |
 | --- | ---: |
@@ -170,7 +176,7 @@ A API oficial do **Walk Score** exige chave, integração via servidor, e docume
 | Farmácia | 20% |
 | Academia | 20% |
 
-Para cada categoria é considerada a distância em linha reta até o estabelecimento cadastrado mais próximo. Até **300 m** dá 100 pontos para a categoria; depois a pontuação cai linearmente até **0 a 1.500 m**. Categoria sem local mapeado recebe zero. A pontuação final é a média ponderada, arredondada para inteiro.
+Cada categoria pontua somente quando há ao menos um estabelecimento em até **300 m**, em linha reta. Categoria sem local mapeado dentro desse raio recebe zero. A nota soma as contribuições ponderadas das quatro categorias. Sem uma base local válida, o índice fica indisponível.
 
 **Limitações importantes:** este índice **não mede distância real a pé**, calçadas, topografia, travessias, iluminação, segurança, tempo de caminhada, qualidade dos estabelecimentos nem cobertura incompleta do OpenStreetMap. Não equivale e não pode ser apresentado como o Walk Score oficial. O link externo apenas abre o site oficial para consulta, sem garantir pontuação para imóveis no Brasil.
 

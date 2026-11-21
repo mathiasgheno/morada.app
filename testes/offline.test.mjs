@@ -7,10 +7,10 @@ const database = {
   items: [{ id: 'perto', lat: -23.5501, lng: -46.63 }, { id: 'longe', lat: -23.56, lng: -46.63 }],
 };
 
-test('Consulta offline limita os resultados a 350 m e preserva origem', () => {
+test('Consulta offline limita os resultados a 300 m e preserva origem', () => {
   const [result] = consultarNaBase([{ id: 1, lat: -23.55, lng: -46.63 }], database);
   assert.deepEqual(result.items.map(item => item.id), ['perto']);
-  assert.equal(result.radius, 350);
+  assert.equal(result.radius, 300);
   assert.equal(result.dataGeneratedAt, database.generatedAt);
 });
 

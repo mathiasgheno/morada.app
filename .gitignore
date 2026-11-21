@@ -8,6 +8,7 @@ imoveis.json.lock
 imoveis.json.tmp
 imoveis.json.status-*.tmp
 imoveis.json.notes-*.tmp
+imoveis.json.walkability-*.tmp
 *.osm.pbf
 .venv/
 __pycache__/

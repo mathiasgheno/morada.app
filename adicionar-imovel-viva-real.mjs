@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { adquirirTrava } from './arquivo-lock.mjs';
 import { consultarEstabelecimentos } from './estabelecimentos.mjs';
 import { arquivoDados } from './dados-projeto.mjs';
+import { calculatePropertyWalkability } from './src/walkability.mjs';
+import { RADIUS_METERS } from './src/geo.mjs';
 
 const file = arquivoDados('imoveis.json');
 const temporary = new URL(`${file.href}.tmp`);
@@ -31,7 +33,8 @@ try {
     property.url = url.href;
     property.statusAnuncio = { status: 'active', checkedAt: Date.now(), method: 'browser-page-access' };
     try { [property.nearbyEstablishments] = await consultarEstabelecimentos([property]); }
-    catch (error) { property.nearbyEstablishments = { radius: 350, items: [], checkedAt: null, error: error.message }; console.warn(`Estabelecimentos pendentes: ${error.message}`); }
+    catch (error) { property.nearbyEstablishments = { radius: RADIUS_METERS, items: [], checkedAt: null, error: error.message }; console.warn(`Estabelecimentos pendentes: ${error.message}`); }
+    property.walkability = calculatePropertyWalkability(property);
     await writeFile(temporary, JSON.stringify([...properties, property], null, 2) + '\n', { flag: 'wx' });
     await rename(temporary, file);
     console.log(`Viva Real ${id} adicionado. Recarregue a página.`);

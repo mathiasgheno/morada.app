@@ -1,5 +1,6 @@
 import { extractProperties, sortProperties, dateText, brl, availabilityColor } from './data.mjs';
-import { CATEGORIES, RADIUS_METERS, calculateWalkability, distanceText } from './geo.mjs';
+import { CATEGORIES, RADIUS_METERS, distanceText } from './geo.mjs';
+import { localPois, propertyWalkability } from './walkability.mjs';
 import { initNotes } from './notes-ui.mjs';
 
 const $ = id => document.getElementById(id);
@@ -180,7 +181,7 @@ function cardHtml(p) {
       ${score ? `<span class="card-score">↟ ${score.score}/100 estimado</span>` : ''}
     </div>
     <div class="card-availability"><span>◷ Disponibilidade</span><strong>${escapeHtml(dateText(p))}</strong></div>
-    <div class="card-actions"><button type="button" class="action-score" data-action="score" ${!p.coordinates ? 'disabled title="Coordenadas não disponíveis"' : ''}>Calcular índice ↗</button>${propertyVideo(p) ? '<button type="button" class="card-video" data-action="video">▶ Vídeo</button>' : ''}${safeLink(p.url) ? `<a class="listing-link" href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" title="Abrir anúncio no ${p.origem === 'viva-real' ? 'Viva Real' : 'QuintoAndar'}" aria-label="Abrir anúncio no ${p.origem === 'viva-real' ? 'Viva Real' : 'QuintoAndar'}">Anúncio ↗</a>` : ''}</div>
+    <div class="card-actions">${propertyVideo(p) ? '<button type="button" class="card-video" data-action="video">▶ Vídeo</button>' : ''}${safeLink(p.url) ? `<a class="listing-link" href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer" title="Abrir anúncio no ${p.origem === 'viva-real' ? 'Viva Real' : 'QuintoAndar'}" aria-label="Abrir anúncio no ${p.origem === 'viva-real' ? 'Viva Real' : 'QuintoAndar'}">Anúncio ↗</a>` : ''}</div>
   </article>`;
 }
 const imageCache = new Map();
@@ -383,22 +384,19 @@ function renderCards({ preserveCards = false } = {}) {
 }
 function scoreStatus(property) {
   const score = state.scores.get(property?.id);
-  $('calculateButton').disabled = !property?.coordinates;
   if (!property) {
     $('scoreResult').innerHTML = '—<small>/ 100</small>';
-    $('scoreDescription').textContent = 'Selecione um imóvel e clique em calcular para estimar sua caminhabilidade.';
+    $('scoreDescription').textContent = 'Selecione um imóvel para ver seu índice de caminhabilidade.';
   } else if (!property.coordinates) {
     $('scoreResult').innerHTML = '—<small>/ 100</small>';
     $('scoreDescription').textContent = 'Imóvel sem coordenadas: não é possível calcular o índice.';
   } else if (score) {
     $('scoreResult').innerHTML = `${score.score}<small>/ 100</small>`;
     const nearest = Object.entries(score.categories).map(([key, data]) => `${CATEGORIES[key].label.toLowerCase()}: ${distanceText(data.nearest)}`).join(' · ');
-    $('scoreDescription').textContent = `Estimativa pelo OSM · ${nearest}`;
-    $('calculateButton').textContent = 'Recalcular';
+    $('scoreDescription').textContent = `Estimativa automática · Até ${RADIUS_METERS} m · ${nearest}`;
   } else {
     $('scoreResult').innerHTML = '—<small>/ 100</small>';
-    $('scoreDescription').textContent = 'Proximidade de mercados, parques, farmácias e academias. Não é o Walk Score oficial.';
-    $('calculateButton').textContent = 'Calcular índice';
+    $('scoreDescription').textContent = 'Índice indisponível: atualize os estabelecimentos locais deste imóvel.';
   }
 }
 function renderPois() {
@@ -464,21 +462,14 @@ function renderMetro() {
 function getMetroCacheKey(property) {
   return `${Math.round(property.coordinates.lat * 100) / 100}:${Math.round(property.coordinates.lng * 100) / 100}`;
 }
-async function getPois(property) {
-  const local = property.raw.nearbyEstablishments;
-  if (!local?.checkedAt || local.error || local.radius !== RADIUS_METERS) throw new Error('Execute bun run update:estabelecimentos para atualizar os dados locais.');
-  state.pois.set(property.id, local.items);
-  return local.items;
-}
 function loadNeighborhood(property, token) {
   if (!property.coordinates) {
     setStatus('Coordenadas ausentes no JSON deste imóvel');
     return;
   }
   try {
-    const local = property.raw.nearbyEstablishments;
-    if (!local?.checkedAt || local.error || local.radius !== RADIUS_METERS || !Array.isArray(local.items)) throw new Error('Atualize o JSON com bun run update:estabelecimentos e recarregue a página.');
-    const pois = local.items;
+    const pois = localPois(property.raw);
+    if (pois === null) throw new Error('Atualize os estabelecimentos locais deste projeto e recarregue a página.');
     if (token !== state.version) return;
     state.pois.set(property.id, pois);
     state.activePois = pois;
@@ -567,29 +558,6 @@ function scrollToSelectedCard(focus = true) {
     }
   }
 }
-async function calculateScore(property) {
-  if (!property?.coordinates) return;
-  if (state.selected?.id !== property.id) selectProperty(property.id);
-  $('calculateButton').disabled = true;
-  $('calculateButton').textContent = 'Calculando…';
-  try {
-    const pois = await getPois(property);
-    if (pois === null) return;
-    const score = calculateWalkability(property.coordinates, pois);
-    state.scores.set(property.id, score);
-    if (state.selected?.id === property.id) scoreStatus(property);
-    renderCards();
-  } catch (error) {
-    if (state.selected?.id === property.id) {
-      $('scoreDescription').textContent = `Falha ao calcular: ${error.message}. Tente novamente.`;
-    }
-  } finally {
-    if (state.selected?.id === property.id) {
-      $('calculateButton').disabled = false;
-      $('calculateButton').textContent = state.scores.has(property.id) ? 'Recalcular' : 'Calcular índice';
-    }
-  }
-}
 function loadData(json, sourceLabel = 'arquivo') {
   const properties = extractProperties(json);
   state.properties = properties;
@@ -597,6 +565,10 @@ function loadData(json, sourceLabel = 'arquivo') {
   state.listings = Object.fromEntries(properties.map(property => [property.id, property.raw.statusAnuncio || { status: 'unknown', checkedAt: null }]));
   refreshListings();
   state.pois.clear(); state.scores.clear(); state.metros.clear(); state.poisPromises.clear();
+  for (const property of properties) {
+    const score = propertyWalkability(property.raw);
+    if (score) state.scores.set(property.id, score);
+  }
   state.selected = null;
   state.version++;
   const demo = properties.length > 0 && properties.every(p => p.demo);
@@ -735,10 +707,7 @@ $('propertyList').addEventListener('click', event => {
     preloadGallery(property);
     return;
   }
-  if (button.dataset.action === 'score') {
-    const property = state.properties.find(p => p.id === id);
-    calculateScore(property);
-  } else selectProperty(id);
+  selectProperty(id);
 });
 $('propertyList').addEventListener('keydown', event => {
   if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.card-photo[data-action="gallery"]')) {
@@ -775,7 +744,6 @@ $('favoritesOnly').addEventListener('change', applyAmenityFilters);
 $('favoritesOnTop').addEventListener('change', () => renderCards());
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshListings(); });
 $('sortSelect').addEventListener('change', event => { state.sort = event.target.value; renderCards(); });
-$('calculateButton').addEventListener('click', () => calculateScore(state.selected));
 $('jsonInput').addEventListener('change', async event => {
   const file = event.target.files?.[0];
   if (!file) return;

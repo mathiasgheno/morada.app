@@ -4,6 +4,8 @@ import { consultarEstabelecimentos } from './estabelecimentos.mjs';
 import { adquirirTrava } from './arquivo-lock.mjs';
 import { consultarStatusAnuncio } from './status-anuncios.mjs';
 import { arquivoDados } from './dados-projeto.mjs';
+import { calculatePropertyWalkability } from './src/walkability.mjs';
+import { RADIUS_METERS } from './src/geo.mjs';
 
 const id = process.argv[2];
 const file = arquivoDados('imoveis.json');
@@ -40,7 +42,7 @@ try {
     property.statusAnuncio = await consultarStatusAnuncio(id);
     try { [property.nearbyEstablishments] = await consultarEstabelecimentos([property]); }
     catch (error) {
-      property.nearbyEstablishments = { radius: 350, items: [], checkedAt: null, error: error.message };
+      property.nearbyEstablishments = { radius: RADIUS_METERS, items: [], checkedAt: null, error: error.message };
       console.warn(`Estabelecimentos não confirmados: ${error.message}`);
     }
     try { property.video = await consultarVideo(id); }
@@ -48,6 +50,7 @@ try {
       property.video = videoFailure(null, error);
       console.warn(`Imóvel será adicionado, mas o vídeo não foi confirmado: ${error.message}`);
     }
+    property.walkability = calculatePropertyWalkability(property);
     await writeFile(temporary, JSON.stringify([...properties, property], null, 2) + '\n', { flag: 'wx' });
     await rename(temporary, file);
     console.log(`Imóvel ${id} adicionado. Recarregue a página.`);

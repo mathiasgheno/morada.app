@@ -10,6 +10,7 @@
     "add:imovel:viva-real": "bun adicionar-imovel-viva-real.mjs",
     "update:videos": "bun atualizar-videos.mjs",
     "update:status": "bun atualizar-status-anuncios.mjs",
+    "update:caminhabilidade": "bun atualizar-caminhabilidade.mjs",
     "update:estabelecimentos": "bun atualizar-estabelecimentos.mjs",
     "favorito": "bun favorito.mjs"
   },

@@ -3,6 +3,7 @@ import { consultarEstabelecimentos, dadosLocaisValidos, retryDelay } from './est
 import { setTimeout as sleep } from 'node:timers/promises';
 import { adquirirTrava } from './arquivo-lock.mjs';
 import { arquivoDados } from './dados-projeto.mjs';
+import { calculatePropertyWalkability } from './src/walkability.mjs';
 
 const file = arquivoDados('imoveis.json');
 const lock = new URL(`${file.href}.lock`);
@@ -28,6 +29,7 @@ try {
         const [result] = await consultarEstabelecimentos([property]);
         if (result.error) throw new Error(result.error);
         property.nearbyEstablishments = result;
+        property.walkability = calculatePropertyWalkability(property);
         await writeFile(temporary, JSON.stringify(properties, null, 2) + '\n', { flag: 'wx' });
         await rename(temporary, file);
         remaining--;
