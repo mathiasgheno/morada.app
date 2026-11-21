@@ -99,10 +99,8 @@ function renderPropertyMarkers(fitAll = false) {
   if (!map) return;
   propertyLayer.clearLayers();
   propertyMarkers.clear();
-  const coords = [];
   for (const property of filtered()) {
     if (!property.coordinates) continue;
-    coords.push([property.coordinates.lat, property.coordinates.lng]);
     const selected = state.selected?.id === property.id;
     const marker = L.marker([property.coordinates.lat, property.coordinates.lng], { icon: pointIcon(property, selected), zIndexOffset: selected ? 1000 : 0 });
     if (state.favorites.has(property.id)) marker.options.title = `Favorito · ${property.title}`;
@@ -112,6 +110,11 @@ function renderPropertyMarkers(fitAll = false) {
     propertyMarkers.set(property.id, marker);
   }
   if (hoveredPropertyId) highlightProperty(hoveredPropertyId);
+  // O filtro de anúncios ativos começa vazio até a primeira resposta do servidor.
+  // O enquadramento inicial usa os imóveis carregados, sem depender dessa consulta.
+  const coords = fitAll ? filtered({ ignoreListingStatus: true })
+    .filter(property => property.coordinates)
+    .map(property => [property.coordinates.lat, property.coordinates.lng]) : [];
   if (fitAll && coords.length) {
     const median = values => [...values].sort((first, second) => first - second)[Math.floor(values.length / 2)];
     const center = L.latLng(median(coords.map(point => point[0])), median(coords.map(point => point[1])));
@@ -122,11 +125,11 @@ function renderPropertyMarkers(fitAll = false) {
     map.fitBounds(bounds, { paddingTopLeft: [55, 55], paddingBottomRight: [55, 65], maxZoom: 15, animate: false });
   }
 }
-function filtered() {
+function filtered({ ignoreListingStatus = false } = {}) {
   const search = state.query.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const results = sortProperties(state.properties.filter(p => {
     if ($('favoritesOnly').checked && !state.favorites.has(p.id)) return false;
-    if ($('activeListingsOnly').checked && state.listings[p.id]?.status !== 'active') return false;
+    if (!ignoreListingStatus && $('activeListingsOnly').checked && state.listings[p.id]?.status !== 'active') return false;
     if (![...state.amenities].every(key => p[key])) return false;
     const text = [p.id, p.title, p.street, p.neighborhood, p.city, p.state].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return text.includes(search);
