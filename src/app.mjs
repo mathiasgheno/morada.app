@@ -24,7 +24,17 @@ function updateBaseMapTheme() {
     attribution: '&copy; OpenStreetMap contributors · Protomaps' }).addTo(map);
 }
 systemTheme.addEventListener('change', updateBaseMapTheme);
-const propertyNotes = initNotes({ onChange: () => renderCards(), getProperty: id => state.properties.find(property => property.id === id) });
+const propertyNotes = initNotes({ onChange: updateNoteIndicators, getProperty: id => state.properties.find(property => property.id === id) });
+function updateNoteIndicators() {
+  $('propertyList').querySelectorAll('[data-action="notes"]').forEach(button => {
+    const hasNote = propertyNotes.has(button.closest('.property-card').dataset.id);
+    if (button.classList.contains('has-note') === hasNote) return;
+    button.classList.toggle('has-note', hasNote);
+    button.setAttribute('aria-label', hasNote ? 'Editar anotação' : 'Adicionar anotação');
+    button.title = hasNote ? 'Editar sua anotação' : 'Adicionar anotação pessoal';
+    button.lastChild.textContent = hasNote ? 'Anotado' : 'Anotar';
+  });
+}
 const propertyMarkers = new Map();
 let hoveredPropertyId = null;
 function highlightProperty(id) {
