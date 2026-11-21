@@ -59,7 +59,7 @@ async function load() {
     projects = await request('/api/projetos');
     $('projectTotal').textContent = projects.length;
     $('launcherStatus').textContent = '';
-    $('projectGrid').innerHTML = projects.map(project => `<article class="project-card" data-id="${escapeHtml(project.id)}"><button class="project-card-main" data-action="open" aria-label="Abrir ${escapeHtml(project.name)}"><span class="project-heading"><span class="project-symbol" aria-hidden="true">⌂</span><h2>${escapeHtml(project.name)}</h2><span class="project-arrow" aria-hidden="true">›</span></span><p class="project-reference"><span aria-hidden="true">⌖</span>${escapeHtml(project.reference.name)}</p><span class="project-stats"><span><b>${project.propertyCount}</b> imóveis</span><span><b>${project.favoriteCount}</b> favoritos</span><span><b>${project.noteCount}</b> anotações</span></span></button><div class="project-card-footer"><button class="text-button" data-action="edit">Configurar</button><button class="text-button" data-action="duplicate">Duplicar</button><button class="text-button open-project" data-action="open">Abrir projeto ↗</button></div></article>`).join('');
+    $('projectGrid').innerHTML = projects.map(project => `<article class="project-card" data-id="${escapeHtml(project.id)}"><button class="project-card-main" data-action="open" aria-label="Abrir ${escapeHtml(project.name)}"><span class="project-heading"><span class="project-symbol" aria-hidden="true">⌂</span><h2>${escapeHtml(project.name)}</h2><span class="project-arrow" aria-hidden="true">›</span></span><p class="project-reference"><span aria-hidden="true">⌖</span>${escapeHtml(project.reference?.name || 'Sem ponto de referência')}</p><span class="project-stats"><span><b>${project.propertyCount}</b> imóveis</span><span><b>${project.favoriteCount}</b> favoritos</span><span><b>${project.noteCount}</b> anotações</span></span></button><div class="project-card-footer"><button class="text-button" data-action="edit">Configurar</button><button class="text-button" data-action="duplicate">Duplicar</button><button class="text-button open-project" data-action="open">Abrir projeto ↗</button></div></article>`).join('');
   } catch (error) { $('launcherStatus').textContent = `Não foi possível conectar ao serviço local do Morada. O desktop precisa dele para funcionar. Tente abrir novamente. Detalhe: ${error.message}`; }
 }
 function point() { return [Number($('referenceLat').value), Number($('referenceLng').value)]; }
@@ -73,6 +73,8 @@ function openForm(project, duplicate = false) {
   editing = project && !duplicate ? project.id : null;
   duplicateFrom = duplicate ? project.id : null;
   $('projectForm').reset();
+  $('useReference').checked = Boolean(project?.reference);
+  toggleReferenceFields();
   const reference = project?.reference || { name: 'Meu ponto de referência', address: 'Av. Paulista, 2300 · São Paulo', lat: -23.556866, lng: -46.661231 };
   $('projectNameInput').value = project ? `${project.name}${duplicate ? ' — cópia' : ''}`.slice(0, 120) : '';
   $('referenceName').value = reference.name;
@@ -87,6 +89,13 @@ function openForm(project, duplicate = false) {
   $('projectNameInput').focus();
 }
 $('newProject').addEventListener('click', () => openForm());
+function toggleReferenceFields() {
+  cancelAddressLookup();
+  $('referenceFields').hidden = !$('useReference').checked;
+  $('referenceFields').disabled = !$('useReference').checked;
+  if ($('useReference').checked && previewMap) previewMap.invalidateSize();
+}
+$('useReference').addEventListener('change', toggleReferenceFields);
 function newProjectFromMenu() {
   window.__moradaNewProjectRequested = false;
   if (!$('projectDialog').open) openForm();
@@ -116,7 +125,7 @@ $('projectForm').addEventListener('submit', async event => {
   $('saveProject').disabled = true;
   $('projectFormStatus').textContent = 'Salvando projeto…';
   try {
-    await request(editing ? `/api/projetos/${editing}` : '/api/projetos', { name: $('projectNameInput').value, reference: { name: $('referenceName').value, address: $('referenceAddress').value, lat: point()[0], lng: point()[1] }, ...(duplicateFrom ? { duplicateFrom } : {}) }, editing ? 'PUT' : 'POST');
+    await request(editing ? `/api/projetos/${editing}` : '/api/projetos', { name: $('projectNameInput').value, reference: $('useReference').checked ? { name: $('referenceName').value, address: $('referenceAddress').value, lat: point()[0], lng: point()[1] } : null, ...(duplicateFrom ? { duplicateFrom } : {}) }, editing ? 'PUT' : 'POST');
     $('projectDialog').close();
     await load();
   } catch (error) { $('projectFormStatus').textContent = error.message; }

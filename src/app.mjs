@@ -81,6 +81,7 @@ function initMap() {
   poiLayer = L.layerGroup().addTo(map);
   propertyLayer = L.layerGroup().addTo(map);
   const workIcon = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12a25 25 0 0 0 18 0M12 12v3"/></svg>';
+  if (referencePoint) {
   L.marker(referencePoint, {
     icon: L.divIcon({ className: 'reference-marker', html: workIcon, iconSize: [36, 36], iconAnchor: [18, 18] }),
     zIndexOffset: 2000,
@@ -100,6 +101,7 @@ function initMap() {
     return button;
   };
   referenceControl.addTo(map);
+  }
   setStatus('Selecione um imóvel para explorar a região');
 }
 function pointIcon(property, selected = false) {
@@ -131,7 +133,7 @@ function renderPropertyMarkers(fitAll = false) {
     const center = L.latLng(median(coords.map(point => point[0])), median(coords.map(point => point[1])));
     const concentrated = [...coords].sort((first, second) => center.distanceTo(first) - center.distanceTo(second))
       .slice(0, Math.max(1, Math.ceil(coords.length * 0.8)));
-    const bounds = L.latLngBounds([...concentrated, referencePoint]);
+    const bounds = L.latLngBounds([...concentrated, ...(referencePoint ? [referencePoint] : [])]);
     map.invalidateSize({ pan: false });
     map.fitBounds(bounds, { paddingTopLeft: [55, 55], paddingBottomRight: [55, 65], maxZoom: 15, animate: false });
   }
@@ -147,7 +149,7 @@ function filtered({ ignoreListingStatus = false } = {}) {
     if (![...state.amenities].every(key => p[key])) return false;
     const text = [p.id, p.title, p.street, p.neighborhood, p.city, p.state].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return text.includes(search);
-  }), state.sort, { lat: referencePoint[0], lng: referencePoint[1] });
+  }), state.sort, referencePoint ? { lat: referencePoint[0], lng: referencePoint[1] } : null);
   return !$('favoritesOnTop').checked ? results : results.sort((first, second) => Number(state.favorites.has(second.id)) - Number(state.favorites.has(first.id)));
 }
 function photoArrow(direction) {
@@ -611,7 +613,7 @@ function loadData(json, sourceLabel = 'arquivo') {
     scoreStatus(null);
     setStatus('Selecione um imóvel para consultar os estabelecimentos próximos');
   } else {
-    if (location.pathname.startsWith('/projetos/')) map?.setView(referencePoint, 14, { animate: false });
+    if (location.pathname.startsWith('/projetos/')) map?.setView(referencePoint || [-23.55, -46.64], referencePoint ? 14 : 12, { animate: false });
     $('selectedTitle').textContent = 'Nenhum imóvel carregado';
     $('selectedSubtitle').textContent = 'Importe um JSON para começar.';
     setStatus(location.pathname.startsWith('/projetos/') ? 'Projeto vazio · Use Projeto → Adicionar imóvel para começar' : 'Nenhum imóvel carregado');
@@ -624,8 +626,8 @@ async function start() {
       const response = await fetch('./projeto.json', { cache: 'no-store' });
       if (!response.ok) throw new Error('Não foi possível abrir a configuração do projeto.');
       const project = await response.json();
-      reference = project.reference;
-      referencePoint = [reference.lat, reference.lng];
+      reference = project.reference || null;
+      referencePoint = reference ? [reference.lat, reference.lng] : null;
       document.title = `${project.name} · Morada`;
       window.addEventListener('morada:add-property', () => {
         if (!$('addPropertyDialog').open) $('addPropertyDialog').showModal();
@@ -643,8 +645,11 @@ async function start() {
           location.reload();
         } catch (error) { $('addPropertyStatus').textContent = error.message; button.disabled = false; }
       });
-      $('sortSelect').querySelector('[value="distance-asc"]').textContent = `Menor distância — ${reference.name}`;
-      $('sortSelect').querySelector('[value="distance-desc"]').textContent = `Maior distância — ${reference.name}`;
+      for (const [value, label] of [['distance-asc', 'Menor distância'], ['distance-desc', 'Maior distância']]) {
+        const option = $('sortSelect').querySelector(`[value="${value}"]`);
+        option.textContent = `${label} — ${reference?.name || 'sem referência'}`;
+        option.disabled = !reference;
+      }
     } catch (error) { showNotice(error.message, true); return; }
   }
   initMap();

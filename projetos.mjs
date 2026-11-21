@@ -15,6 +15,7 @@ function validarConfiguracao(input) {
   const name = typeof input.name === 'string' ? input.name.trim() : '';
   if (!name || name.length > 120) throw new Error('Informe um nome de até 120 caracteres.');
   const reference = input.reference;
+  if (reference == null) return { name, reference: null, city: 'São Paulo', state: 'SP' };
   if (!reference || typeof reference.name !== 'string' || !reference.name.trim() || reference.name.length > 120 ||
       typeof reference.address !== 'string' || reference.address.length > 400 || !Number.isFinite(reference.lat) || !Number.isFinite(reference.lng) ||
       reference.lat < -24.2 || reference.lat > -23.1 || reference.lng < -47.2 || reference.lng > -46) throw new Error('Informe um ponto de referência válido na região de São Paulo.');

@@ -21,8 +21,11 @@
     <form id="projectForm"><div class="dialog-heading"><h2 id="projectDialogTitle">Novo projeto</h2><button id="closeProjectDialog" class="icon-button" type="button" aria-label="Fechar">✕</button></div>
       <label for="projectNameInput">Nome do projeto</label><input id="projectNameInput" required maxlength="120" placeholder="Ex.: Morando perto do Arca" autocomplete="off">
       <label for="projectCity">Cidade</label><input id="projectCity" value="São Paulo, São Paulo" disabled>
+      <label class="reference-toggle"><input id="useReference" type="checkbox"> Definir ponto de referência (opcional)</label>
+      <fieldset id="referenceFields" disabled hidden>
       <div class="field-pair"><div><label for="referenceName">Ponto de referência</label><input id="referenceName" required maxlength="120" placeholder="Ex.: Arca"></div><div><label for="referenceAddress">Endereço</label><input id="referenceAddress" maxlength="400" placeholder="São Paulo, SP"><p id="referenceAddressStatus" class="field-help" role="status"></p></div></div>
       <details id="referenceDetails"><summary>Escolher localização no mapa</summary><p class="field-help">Clique no mapa para atualizar o ponto e buscar o endereço aproximado online, via Photon/OpenStreetMap. Você pode ajustar o endereço depois.</p><div id="referenceMap" aria-label="Escolher ponto de referência em São Paulo"></div><div class="field-pair coordinate-fields"><div><label for="referenceLat">Latitude</label><input id="referenceLat" type="number" step="any" min="-24.2" max="-23.1" required></div><div><label for="referenceLng">Longitude</label><input id="referenceLng" type="number" step="any" min="-47.2" max="-46" required></div></div></details>
+      </fieldset>
       <p id="projectFormStatus" role="status"></p><div class="dialog-actions"><button id="cancelProjectDialog" class="secondary-button" type="button">Cancelar</button><button id="saveProject" class="primary-button" type="submit">Criar projeto</button></div>
     </form>
   </dialog>

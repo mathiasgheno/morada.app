@@ -4,6 +4,16 @@ use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri::menu::{AboutMetadata, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use std::sync::Mutex;
 
+fn update_active_window(app: &tauri::AppHandle, label: &str) {
+    if let Ok(mut active) = app.state::<Mutex<String>>().lock() {
+        *active = label.to_string();
+    }
+    // Mantém o próprio item: Menu::get não procura dentro de submenus.
+    if let Some(item) = app.try_state::<MenuItem<tauri::Wry>>() {
+        let _ = item.set_enabled(label.starts_with("project-"));
+    }
+}
+
 fn launcher_window(app: &tauri::AppHandle, new_project: bool) -> Result<tauri::WebviewWindow, String> {
     if let Some(window) = app.get_webview_window("main") {
         return Ok(window);
@@ -25,6 +35,7 @@ async fn open_project(app: tauri::AppHandle, window: tauri::WebviewWindow, id: S
     }
     let label = format!("project-{}", id);
     if let Some(existing) = app.get_webview_window(&label) {
+        update_active_window(&app, &label);
         existing.show().map_err(|e| e.to_string())?;
         return existing.set_focus().map_err(|e| e.to_string());
     }
@@ -32,12 +43,13 @@ async fn open_project(app: tauri::AppHandle, window: tauri::WebviewWindow, id: S
     url.set_path(&format!("/projetos/{}/", id));
     url.set_query(None);
     url.set_fragment(None);
-    WebviewWindowBuilder::new(&app, label, WebviewUrl::External(url))
+    WebviewWindowBuilder::new(&app, label.clone(), WebviewUrl::External(url))
         .title(format!("{} · Morada", name))
         .inner_size(1440.0, 960.0)
         .min_inner_size(900.0, 600.0)
         .build()
         .map_err(|e| e.to_string())?;
+    update_active_window(&app, &label);
     Ok(())
 }
 
@@ -74,21 +86,12 @@ fn main() {
             #[cfg(not(target_os = "macos"))]
             menu.insert(&project_menu, 0)?;
             app.set_menu(menu)?;
+            app.manage(add_property);
             Ok(())
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Focused(true) = event {
-                let app = window.app_handle();
-                if let Ok(mut label) = app.state::<Mutex<String>>().lock() {
-                    *label = window.label().to_string();
-                }
-                if let Some(menu) = app.menu() {
-                    if let Some(item) = menu.get("add-property") {
-                        if let Some(item) = item.as_menuitem() {
-                            let _ = item.set_enabled(window.label().starts_with("project-"));
-                        }
-                    }
-                }
+                update_active_window(window.app_handle(), window.label());
             }
         })
         .on_menu_event(|app, event| {

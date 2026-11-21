@@ -14,6 +14,8 @@ O servidor HTTP local é único e escuta apenas em `127.0.0.1`. O launcher exibe
 
 No formulário de projeto, a cidade é fixa em “São Paulo, São Paulo”. Selecionar um ponto no mapa ou alterar suas coordenadas busca um endereço aproximado pela rota local `GET /api/endereco?lat=…&lng=…`, que consulta Photon/OpenStreetMap. A consulta depende de internet, usa fila de uma requisição por segundo e cache em memória. Respostas antigas não sobrescrevem uma seleção nova nem uma edição manual. O servidor do geocodificador pode ser trocado por `MORADA_GEOCODER_URL`. Abrir o seletor de mapa preserva o endereço existente; o preenchimento automático ocorre ao escolher uma localização. Fonte e condições do serviço: https://github.com/komoot/photon.
 
+O ponto de referência é opcional. Novos projetos começam sem referência; marque “Definir ponto de referência” para configurar uma, ou faça isso depois em “Configurar”. Sem referência, não há marcador de trabalho nem ordenação por distância; o mapa enquadra apenas os imóveis. Projetos existentes preservam sua referência.
+
 ## Desktop com Tauri — primeiro protótipo
 
 Na branch `feature/desktop`, execute `bun install` e `bun run desktop:dev` para abrir a aplicação em uma janela Tauri. Requer Bun, Rust/Cargo e as dependências de desenvolvimento do Tauri para seu sistema: https://v2.tauri.app/start/prerequisites/. O launcher também encontra o Cargo instalado em `~/.cargo/bin`.

@@ -58,7 +58,7 @@ const server = Bun.serve({
         const input = await bodyJSON(request);
         if (id && request.method === 'PUT') return Response.json(await projects.atualizar(id, input));
         if (!id && request.method === 'POST') {
-          if (input.duplicateFrom && !input.reference) input.reference = (await projects.ler(input.duplicateFrom)).reference;
+          if (input.duplicateFrom && !Object.hasOwn(input, 'reference')) input.reference = (await projects.ler(input.duplicateFrom)).reference;
           return Response.json(await projects.criar(input), { status: 201 });
         }
         return new Response(null, { status: 405 });

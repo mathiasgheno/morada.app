@@ -33,7 +33,14 @@ test('Projetos copiam o legado uma vez, isolam cópias e compartilham apenas os 
     assert.equal((await repository.ler(copy.id)).reference.lat, -23.54);
     await repository.inicializar();
     assert.equal((await repository.listar()).length, 2);
-    const empty = await repository.criar({ name: 'Nova busca', reference: DEFAULT_REFERENCE });
+    const empty = await repository.criar({ name: 'Nova busca' });
+    assert.equal(empty.reference, null);
+    const noReferenceCopy = await repository.criar({ name: 'Cópia sem referência', duplicateFrom: initial.id, reference: null });
+    assert.equal(noReferenceCopy.reference, null);
+    await repository.atualizar(empty.id, { name: 'Agora com referência', reference: DEFAULT_REFERENCE });
+    assert.deepEqual((await repository.ler(empty.id)).reference, DEFAULT_REFERENCE);
+    await repository.atualizar(empty.id, { name: 'Novamente sem referência', reference: null });
+    assert.equal((await repository.ler(empty.id)).reference, null);
     assert.deepEqual(JSON.parse(await readFile(await repository.arquivo(empty.id, 'imoveis.json'), 'utf8')), []);
     assert.deepEqual((await readdir(new URL(`${empty.id}/`, directory))).sort(), ['favoritos.json', 'imoveis.json', 'projeto.json']);
     await assert.rejects(repository.arquivo(copy.id, '../imoveis.json'));
