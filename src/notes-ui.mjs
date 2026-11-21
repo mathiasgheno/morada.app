@@ -11,7 +11,7 @@ export function initNotes({ onChange, getProperty }) {
   let revision = 0;
   let pending = Promise.resolve();
   async function request(changes) {
-    const response = await fetch('/api/anotacoes', changes ? {
+    const response = await fetch('./api/anotacoes', changes ? {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(changes),
       signal: AbortSignal.timeout(15000),
     } : { cache: 'no-store', signal: AbortSignal.timeout(15000) });

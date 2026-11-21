@@ -6,6 +6,7 @@
     <meta name="color-scheme" content="light dark" />
     <meta name="description" content="Compare imóveis, disponibilidade, mobilidade e serviços próximos em um mapa aberto." />
     <title>Morada · Explorador de imóveis</title>
+    <link rel="icon" href="/assets/morada-symbol.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://tile.openstreetmap.org" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <link rel="stylesheet" href="./style.css" />
@@ -18,6 +19,7 @@
     <div class="app-shell">
       <div class="app-content">
         <aside id="propertySidebar" class="sidebar" aria-label="Lista de imóveis">
+          <div id="projectBar" class="project-bar" hidden><button id="projectLauncher" type="button" title="Ver todos os projetos">‹ Projetos</button><strong id="projectName"></strong><button id="projectAdd" type="button" title="Adicionar imóvel a este projeto">＋ Imóvel</button></div>
           <div class="sidebar-intro">
             <div class="eyebrow">ENCONTRE SEU LUGAR</div>
             <h1>O imóvel certo.<br /><em>O bairro também.</em></h1>
@@ -128,6 +130,10 @@
       <div id="videoPlayer" class="video-player"></div>
       <p class="video-note">Player do Vimeo. Se o proprietário restringir a incorporação, use o link abaixo.</p>
       <a id="videoExternal" target="_blank" rel="noopener noreferrer">Abrir no Vimeo ↗</a>
+    </dialog>
+    <dialog id="addPropertyDialog" class="notes-dialog" aria-labelledby="addPropertyTitle">
+      <div class="video-heading"><strong id="addPropertyTitle">Adicionar imóvel ao projeto</strong><button id="closeAddProperty" type="button" aria-label="Fechar cadastro">✕</button></div>
+      <form id="addPropertyForm"><label for="propertyInput">ID do QuintoAndar ou URL do VivaReal</label><input id="propertyInput" required autocomplete="off" placeholder="Ex.: 894723967 ou https://www.vivareal.com.br/…"><p>O VivaReal abre uma janela do Chrome para extrair o anúncio.</p><button id="submitProperty" type="submit">Adicionar imóvel</button><p id="addPropertyStatus" role="status"></p></form>
     </dialog>
   </body>
 </html>

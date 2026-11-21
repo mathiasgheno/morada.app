@@ -1,6 +1,7 @@
 import { readFile, writeFile, rename, unlink } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { adquirirTrava } from './arquivo-lock.mjs';
+import { arquivoDados } from './dados-projeto.mjs';
 
 export function alterarFavoritos(favorites, id, remove = false) {
   if (!Array.isArray(favorites) || !favorites.every(value => /^\d{7,12}$/.test(String(value)))) throw new Error('favoritos.json inválido; arquivo preservado.');
@@ -12,9 +13,9 @@ export function alterarFavoritos(favorites, id, remove = false) {
 
 async function main() {
   const args = process.argv.slice(2);
-  const file = new URL('./favoritos.json', import.meta.url);
-  const temporary = new URL('./favoritos.json.tmp', import.meta.url);
-  const release = adquirirTrava(new URL('./favoritos.json.lock', import.meta.url));
+  const file = arquivoDados('favoritos.json');
+  const temporary = new URL(`${file.href}.tmp`);
+  const release = adquirirTrava(new URL(`${file.href}.lock`));
   try {
     let favorites;
     try { favorites = JSON.parse(await readFile(file, 'utf8')); }
@@ -29,7 +30,7 @@ async function main() {
     if (args.some(value => value.startsWith('--') && value !== '--remove') || args.filter(value => !value.startsWith('--')).length !== 1) throw new Error('Uso: bun run favorito ID [--remove] ou bun run favorito --list');
     const next = alterarFavoritos(favorites, id, remove);
     if (!remove) {
-      const properties = JSON.parse(await readFile(new URL('./imoveis.json', import.meta.url), 'utf8'));
+      const properties = JSON.parse(await readFile(arquivoDados('imoveis.json'), 'utf8'));
       if (!properties.some(property => String(property.id) === id)) throw new Error('Imóvel não encontrado em imoveis.json.');
     }
     await writeFile(temporary, JSON.stringify(next, null, 2) + '\n', { flag: 'wx' });

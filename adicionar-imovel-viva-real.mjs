@@ -3,15 +3,16 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { adquirirTrava } from './arquivo-lock.mjs';
 import { consultarEstabelecimentos } from './estabelecimentos.mjs';
+import { arquivoDados } from './dados-projeto.mjs';
 
-const file = new URL('./imoveis.json', import.meta.url);
-const temporary = new URL('./imoveis.json.tmp', import.meta.url);
+const file = arquivoDados('imoveis.json');
+const temporary = new URL(`${file.href}.tmp`);
 let release;
 try {
   const url = new URL(process.argv[2]);
   const id = url.pathname.match(/-id-(\d+)\/?$/)?.[1];
   if (url.protocol !== 'https:' || !['www.vivareal.com.br', 'vivareal.com.br'].includes(url.hostname) || !id) throw new Error('Informe a URL HTTPS completa do anúncio do Viva Real.');
-  release = adquirirTrava(new URL('./imoveis.json.lock', import.meta.url));
+  release = adquirirTrava(new URL(`${file.href}.lock`));
   const properties = JSON.parse(await readFile(file, 'utf8'));
   if (!Array.isArray(properties)) throw new Error('imoveis.json precisa conter uma lista.');
   const existing = properties.find(property => String(property.id) === id);

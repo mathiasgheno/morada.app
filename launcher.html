@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark">
+  <title>Seus projetos · Morada</title>
+  <link rel="icon" href="/assets/morada-symbol.svg" type="image/svg+xml"><link rel="stylesheet" href="/launcher.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script defer src="https://unpkg.com/protomaps-leaflet@5.0.0/dist/protomaps-leaflet.js"></script>
+  <script type="module" src="/src/launcher.mjs"></script>
+</head>
+<body>
+  <aside class="launcher-sidebar">
+    <a class="brand" href="/launcher.html" aria-label="Morada — seus projetos"><img src="/assets/morada-symbol.svg" alt="" width="68" height="68"><span>morada<span class="brand-dot">.</span><small>SEU PRÓXIMO LUGAR</small></span></a>
+    <div class="sidebar-section">SEU ESPAÇO</div>
+    <div class="nav-current"><span aria-hidden="true">▦</span> Meus projetos <span id="projectTotal" class="nav-count">–</span></div>
+    <div class="sidebar-bottom"><div class="small-location"><span class="live-dot"></span> São Paulo, SP</div><p>Novos caminhos.<br>Um lugar para chamar de seu.</p><span class="sidebar-line"></span><small>Feito para comparar com calma.</small></div>
+  </aside>
+  <main class="launcher-main">
+    <div class="launcher-topline"><span class="eyebrow">ENCONTRE SEU LUGAR</span><span class="city-tag"><span class="live-dot"></span> São Paulo</span></div>
+    <header class="launcher-hero"><div><h1>Um novo endereço.<br><span>Várias possibilidades.</span></h1><p>Organize suas buscas em projetos.<br>Cada um com seu ponto de partida e seus lugares favoritos.</p></div><button id="newProject" class="primary-button" type="button"><span aria-hidden="true">＋</span> Novo projeto</button></header>
+    <section aria-labelledby="projectsTitle"><div class="section-heading"><h2 id="projectsTitle">Meus projetos</h2><span>Cada busca, uma possibilidade.</span></div><p id="launcherStatus" role="status">Carregando seus projetos…</p><div id="projectGrid" class="project-grid"></div></section>
+    <footer class="launcher-footer"><span>Seus imóveis. Suas anotações. Seu próximo passo.</span><span>morada<span class="brand-dot">.</span></span></footer>
+  </main>
+  <dialog id="projectDialog" aria-labelledby="projectDialogTitle">
+    <form id="projectForm"><div class="dialog-heading"><div><span class="eyebrow">UMA NOVA POSSIBILIDADE</span><h2 id="projectDialogTitle">Novo projeto</h2></div><button id="closeProjectDialog" class="icon-button" type="button" aria-label="Fechar">✕</button></div>
+      <label for="projectNameInput">Nome do projeto</label><input id="projectNameInput" required maxlength="120" placeholder="Ex.: Morando perto do Arca" autocomplete="off">
+      <div class="field-pair"><div><label for="referenceName">Ponto de referência</label><input id="referenceName" required maxlength="120" placeholder="Ex.: Arca"></div><div><label for="referenceAddress">Endereço ou descrição</label><input id="referenceAddress" maxlength="400" placeholder="São Paulo, SP"></div></div>
+      <details id="referenceDetails"><summary>Escolher localização no mapa</summary><p class="field-help">Clique no mapa para posicionar a referência. Preencher o endereço acima não move o ponto.</p><div id="referenceMap" aria-label="Escolher ponto de referência em São Paulo"></div><div class="field-pair coordinate-fields"><div><label for="referenceLat">Latitude</label><input id="referenceLat" type="number" step="any" min="-24.2" max="-23.1" required></div><div><label for="referenceLng">Longitude</label><input id="referenceLng" type="number" step="any" min="-47.2" max="-46" required></div></div></details>
+      <p class="field-help">Cidade: São Paulo. Imóveis, favoritos e anotações ficam separados por projeto.</p><p id="projectFormStatus" role="status"></p><div class="dialog-actions"><button id="cancelProjectDialog" class="secondary-button" type="button">Cancelar</button><button id="saveProject" class="primary-button" type="submit">Criar projeto</button></div>
+    </form>
+  </dialog>
+</body>
+</html>

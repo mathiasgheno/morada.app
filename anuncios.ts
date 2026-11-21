@@ -1,17 +1,20 @@
 import { atualizarStatusAnuncios } from './status-anuncios.mjs';
 
-let listings = {};
-let pending: Promise<unknown> | null = null;
-export function estadoAnuncios() {
-  return { listings, checking: pending !== null };
+const defaultFile = new URL('./imoveis.json', import.meta.url);
+const results = new Map();
+const pending = new Map();
+export function estadoAnuncios(file = defaultFile) {
+  return { listings: results.get(file.href) || {}, checking: pending.has(file.href) };
 }
 
-export async function verificarAnuncios() {
-  if (pending) return pending;
-  pending = (async () => {
-    const properties = await atualizarStatusAnuncios();
-    listings = Object.fromEntries(properties.map(property => [String(property.id), property.statusAnuncio || { status: 'unknown', checkedAt: null }]));
-    return listings;
+export async function verificarAnuncios(file = defaultFile) {
+  if (pending.has(file.href)) return pending.get(file.href);
+  const job = (async () => {
+    const properties = await atualizarStatusAnuncios({ file });
+    const listings = Object.fromEntries(properties.map(property => [String(property.id), property.statusAnuncio || { status: 'unknown', checkedAt: null }]));
+    results.set(file.href, listings);
+    return { listings, checking: false };
   })();
-  try { return await pending; } finally { pending = null; }
+  pending.set(file.href, job);
+  try { return await job; } finally { pending.delete(file.href); }
 }

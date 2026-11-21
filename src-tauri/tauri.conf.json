@@ -10,10 +10,13 @@
     "frontendDist": "../desktop-dist"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [{
-      "title": "Morada",
-      "width": 1440,
-      "height": 960,
+      "label": "main",
+      "title": "Seus projetos · Morada",
+      "url": "launcher.html",
+      "width": 1180,
+      "height": 800,
       "minWidth": 900,
       "minHeight": 600
     }],

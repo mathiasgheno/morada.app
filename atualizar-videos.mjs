@@ -1,10 +1,11 @@
 import { readFile, writeFile, rename, unlink } from 'node:fs/promises';
 import { consultarVideo, videoFailure } from './videos.mjs';
 import { adquirirTrava } from './arquivo-lock.mjs';
+import { arquivoDados } from './dados-projeto.mjs';
 
-const file = new URL('./imoveis.json', import.meta.url);
-const lock = new URL('./imoveis.json.lock', import.meta.url);
-const temporary = new URL('./imoveis.json.tmp', import.meta.url);
+const file = arquivoDados('imoveis.json');
+const lock = new URL(`${file.href}.lock`);
+const temporary = new URL(`${file.href}.tmp`);
 let locked = false;
 let release;
 try {

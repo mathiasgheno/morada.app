@@ -1,5 +1,15 @@
 # Morada — Explorador de imóveis
 
+## Projetos e launcher
+
+`bun run desktop:dev` abre o launcher em `/launcher.html`. “Novo projeto” cria uma busca vazia; “Duplicar” copia imóveis, favoritos e anotações para uma busca independente. “Configurar” permite alterar o nome e o ponto de referência, inclusive posicionando-o no mapa. São Paulo continua sendo a cidade fixa. No desktop, abrir um projeto cria uma janela própria; abrir o mesmo projeto novamente foca a janela existente. Fechar uma janela de projeto mantém o launcher aberto.
+
+Na primeira execução, os dados atuais são **copiados**, sem remoção ou alteração dos originais, para `projetos/bela-vista-caminhando-ate-o-trabalho/`. A inicialização ocorre uma única vez. Cada projeto contém `projeto.json` (identidade e referência), `imoveis.json` (incluindo notas e status) e `favoritos.json`. O mapa, metrô e base geral de estabelecimentos permanecem compartilhados. Os diretórios pessoais de projetos são ignorados pelo Git; faça backup da pasta `projetos/` para preservar os conjuntos completos. Os arquivos antigos da raiz continuam atendendo a versão web em `/` e os comandos sem `--project`; alterações nesses arquivos não se propagam para a cópia já criada.
+
+Cada janela acessa `/projetos/ID/`, e leituras, gravações de notas, atualizações de status e cadastro de imóveis são direcionados somente ao projeto dessa URL. O botão “＋ Imóvel” aceita ID do QuintoAndar ou URL do VivaReal. Para usar o terminal, acrescente `--project ID` aos comandos `add:imovel`, `add:imovel:viva-real`, `favorito`, `update:status`, `update:videos` e `update:estabelecimentos`. Exemplo: `bun run add:imovel 894723967 --project bela-vista-caminhando-ate-o-trabalho`. O ID corresponde ao nome da pasta; os novos projetos usam UUID. Os scripts sem o argumento preservam seu comportamento anterior na raiz.
+
+O servidor HTTP local é único e escuta apenas em `127.0.0.1`. O launcher exibe erro de conexão caso não consiga acessar o serviço. A distribuição independente e a escolha automática de porta ainda não fazem parte deste protótipo.
+
 ## Desktop com Tauri — primeiro protótipo
 
 Na branch `feature/desktop`, execute `bun install` e `bun run desktop:dev` para abrir a aplicação em uma janela Tauri. Requer Bun, Rust/Cargo e as dependências de desenvolvimento do Tauri para seu sistema: https://v2.tauri.app/start/prerequisites/. O launcher também encontra o Cargo instalado em `~/.cargo/bin`.

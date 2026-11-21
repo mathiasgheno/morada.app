@@ -14,7 +14,8 @@ const state = {
   favorites: new Set(),
 };
 let map, propertyLayer, poiLayer, metroLayer, radiusLayer, metroRenderer;
-const referencePoint = [-23.556866, -46.661231];
+let referencePoint = [-23.556866, -46.661231];
+let reference = { name: 'Trabalho · Paulista, 2300', address: 'Av. Paulista, 2300 — 19º andar, conj. 192 · São Paulo - SP' };
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 let baseMapLayer;
 function updateBaseMapTheme() {
@@ -83,16 +84,16 @@ function initMap() {
   L.marker(referencePoint, {
     icon: L.divIcon({ className: 'reference-marker', html: workIcon, iconSize: [36, 36], iconAnchor: [18, 18] }),
     zIndexOffset: 2000,
-    title: 'Trabalho · Av. Paulista, 2300 — 19º andar, conj. 192',
+    title: reference.name,
   }).addTo(map)
-    .bindTooltip('Trabalho · Paulista, 2300', { permanent: true, direction: 'top', offset: [0, -20], className: 'reference-tooltip' })
-    .bindPopup('<div class="popup-title">Trabalho · Av. Paulista, 2300</div><div class="popup-sub">19º andar · Conj. 192<br>Bela Vista · São Paulo - SP<br>CEP informado: 01310-200<br>Localização aproximada do edifício.</div>');
+    .bindTooltip(escapeHtml(reference.name), { permanent: true, direction: 'top', offset: [0, -20], className: 'reference-tooltip' })
+    .bindPopup(`<div class="popup-title">${escapeHtml(reference.name)}</div><div class="popup-sub">${escapeHtml(reference.address)}<br>Localização aproximada.</div>`);
   const referenceControl = L.control({ position: 'topleft' });
   referenceControl.onAdd = () => {
     const button = L.DomUtil.create('button', 'reference-button');
     button.type = 'button';
-    button.innerHTML = `${workIcon}<span>Trabalho · Paulista, 2300</span>`;
-    button.title = 'Centralizar no local de trabalho';
+    button.innerHTML = `${workIcon}<span>${escapeHtml(reference.name)}</span>`;
+    button.title = 'Centralizar no ponto de referência';
     L.DomEvent.disableClickPropagation(button);
     L.DomEvent.disableScrollPropagation(button);
     button.addEventListener('click', () => map.setView(referencePoint, 16));
@@ -322,7 +323,7 @@ async function refreshListings() {
   if (checkingListings || document.hidden) return;
   checkingListings = true;
   try {
-    const response = await fetch('/api/anuncios', { signal: AbortSignal.timeout(120000) });
+    const response = await fetch('./api/anuncios', { signal: AbortSignal.timeout(120000) });
     if (!response.ok) throw new Error(`Status dos anúncios: HTTP ${response.status}`);
     const result = await response.json();
     const previousIds = filtered().map(property => property.id);
@@ -610,13 +611,47 @@ function loadData(json, sourceLabel = 'arquivo') {
     scoreStatus(null);
     setStatus('Selecione um imóvel para consultar os estabelecimentos próximos');
   } else {
+    if (location.pathname.startsWith('/projetos/')) map?.setView(referencePoint, 14, { animate: false });
     $('selectedTitle').textContent = 'Nenhum imóvel carregado';
     $('selectedSubtitle').textContent = 'Importe um JSON para começar.';
-    setStatus('Nenhum imóvel carregado');
+    setStatus(location.pathname.startsWith('/projetos/') ? 'Projeto vazio · Use “＋ Imóvel” para começar' : 'Nenhum imóvel carregado');
     scoreStatus(null);
   }
 }
 async function start() {
+  if (location.pathname.startsWith('/projetos/')) {
+    try {
+      const response = await fetch('./projeto.json', { cache: 'no-store' });
+      if (!response.ok) throw new Error('Não foi possível abrir a configuração do projeto.');
+      const project = await response.json();
+      reference = project.reference;
+      referencePoint = [reference.lat, reference.lng];
+      document.title = `${project.name} · Morada`;
+      $('projectBar').hidden = false;
+      $('projectName').textContent = project.name;
+      $('projectName').title = project.name;
+      $('projectAdd').addEventListener('click', () => $('addPropertyDialog').showModal());
+      $('closeAddProperty').addEventListener('click', () => $('addPropertyDialog').close());
+      $('addPropertyForm').addEventListener('submit', async event => {
+        event.preventDefault();
+        const button = $('submitProperty');
+        button.disabled = true;
+        $('addPropertyStatus').textContent = 'Consultando anúncio e preparando os dados locais…';
+        try {
+          const result = await fetch(`/api/projetos/${project.id}/imoveis`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: $('propertyInput').value.trim() }), signal: AbortSignal.timeout(180000) });
+          const data = await result.json();
+          if (!result.ok) throw new Error(data.error);
+          location.reload();
+        } catch (error) { $('addPropertyStatus').textContent = error.message; button.disabled = false; }
+      });
+      $('projectLauncher').addEventListener('click', async () => {
+        if (window.__TAURI__) await window.__TAURI__.core.invoke('show_launcher');
+        else window.open('/launcher.html', '_blank', 'noopener');
+      });
+      $('sortSelect').querySelector('[value="distance-asc"]').textContent = `Menor distância — ${reference.name}`;
+      $('sortSelect').querySelector('[value="distance-desc"]').textContent = `Maior distância — ${reference.name}`;
+    } catch (error) { showNotice(error.message, true); return; }
+  }
   initMap();
   try {
     const response = await fetch('./favoritos.json', { cache: 'no-store' });
@@ -630,7 +665,12 @@ async function start() {
     const response = await fetch('./imoveis.json', { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     loadData(await response.json(), 'imoveis.json');
-  } catch (_) {
+  } catch (error) {
+    if (location.pathname.startsWith('/projetos/')) {
+      loadData([], 'vazio');
+      showNotice(`Não foi possível ler os imóveis deste projeto: ${error.message}. Os dados não foram alterados.`, true);
+      return;
+    }
     try {
       const response = await fetch('./imoveis.exemplo.json', { cache: 'no-store' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);

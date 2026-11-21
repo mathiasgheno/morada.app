@@ -1,8 +1,9 @@
 import { readFile, writeFile, rename, unlink } from 'node:fs/promises';
 import { adquirirTrava } from './arquivo-lock.mjs';
+import { arquivoDados } from './dados-projeto.mjs';
 
 export const STATUS_INTERVAL_MS = 60_000;
-const defaultFile = new URL('./imoveis.json', import.meta.url);
+const defaultFile = arquivoDados('imoveis.json');
 const timestamp = value => typeof value === 'number' ? value : Date.parse(value) || 0;
 
 export async function consultarStatusAnuncio(id, previous = null, fetcher = fetch) {
