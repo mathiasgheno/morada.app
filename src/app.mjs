@@ -614,7 +614,7 @@ function loadData(json, sourceLabel = 'arquivo') {
     if (location.pathname.startsWith('/projetos/')) map?.setView(referencePoint, 14, { animate: false });
     $('selectedTitle').textContent = 'Nenhum imóvel carregado';
     $('selectedSubtitle').textContent = 'Importe um JSON para começar.';
-    setStatus(location.pathname.startsWith('/projetos/') ? 'Projeto vazio · Use “＋ Imóvel” para começar' : 'Nenhum imóvel carregado');
+    setStatus(location.pathname.startsWith('/projetos/') ? 'Projeto vazio · Use Projeto → Adicionar imóvel para começar' : 'Nenhum imóvel carregado');
     scoreStatus(null);
   }
 }
@@ -627,10 +627,9 @@ async function start() {
       reference = project.reference;
       referencePoint = [reference.lat, reference.lng];
       document.title = `${project.name} · Morada`;
-      $('projectBar').hidden = false;
-      $('projectName').textContent = project.name;
-      $('projectName').title = project.name;
-      $('projectAdd').addEventListener('click', () => $('addPropertyDialog').showModal());
+      window.addEventListener('morada:add-property', () => {
+        if (!$('addPropertyDialog').open) $('addPropertyDialog').showModal();
+      });
       $('closeAddProperty').addEventListener('click', () => $('addPropertyDialog').close());
       $('addPropertyForm').addEventListener('submit', async event => {
         event.preventDefault();
@@ -643,10 +642,6 @@ async function start() {
           if (!result.ok) throw new Error(data.error);
           location.reload();
         } catch (error) { $('addPropertyStatus').textContent = error.message; button.disabled = false; }
-      });
-      $('projectLauncher').addEventListener('click', async () => {
-        if (window.__TAURI__) await window.__TAURI__.core.invoke('show_launcher');
-        else window.open('/launcher.html', '_blank', 'noopener');
       });
       $('sortSelect').querySelector('[value="distance-asc"]').textContent = `Menor distância — ${reference.name}`;
       $('sortSelect').querySelector('[value="distance-desc"]').textContent = `Maior distância — ${reference.name}`;

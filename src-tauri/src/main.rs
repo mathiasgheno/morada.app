@@ -2,6 +2,7 @@
 
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri::menu::{AboutMetadata, Menu, MenuItem, PredefinedMenuItem, Submenu};
+use std::sync::Mutex;
 
 fn launcher_window(app: &tauri::AppHandle, new_project: bool) -> Result<tauri::WebviewWindow, String> {
     if let Some(window) = app.get_webview_window("main") {
@@ -40,16 +41,10 @@ async fn open_project(app: tauri::AppHandle, window: tauri::WebviewWindow, id: S
     Ok(())
 }
 
-#[tauri::command]
-async fn show_launcher(app: tauri::AppHandle) -> Result<(), String> {
-    let launcher = launcher_window(&app, false)?;
-    launcher.show().map_err(|e| e.to_string())?;
-    launcher.set_focus().map_err(|e| e.to_string())
-}
-
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![open_project, show_launcher])
+        .manage(Mutex::new(String::from("main")))
+        .invoke_handler(tauri::generate_handler![open_project])
         .setup(|app| {
             // Mantém os menus nativos de edição e gerenciamento das janelas.
             let menu = Menu::default(app.handle())?;
@@ -72,7 +67,8 @@ fn main() {
                 }
             }
             let new_project = MenuItem::with_id(app, "new-project", "Novo projeto…", true, Some("CmdOrCtrl+N"))?;
-            let project_menu = Submenu::with_items(app, "Projeto", true, &[&new_project])?;
+            let add_property = MenuItem::with_id(app, "add-property", "Adicionar imóvel…", false, Some("CmdOrCtrl+I"))?;
+            let project_menu = Submenu::with_items(app, "Projeto", true, &[&new_project, &add_property])?;
             #[cfg(target_os = "macos")]
             menu.insert(&project_menu, 1)?;
             #[cfg(not(target_os = "macos"))]
@@ -80,7 +76,30 @@ fn main() {
             app.set_menu(menu)?;
             Ok(())
         })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::Focused(true) = event {
+                let app = window.app_handle();
+                if let Ok(mut label) = app.state::<Mutex<String>>().lock() {
+                    *label = window.label().to_string();
+                }
+                if let Some(menu) = app.menu() {
+                    if let Some(item) = menu.get("add-property") {
+                        if let Some(item) = item.as_menuitem() {
+                            let _ = item.set_enabled(window.label().starts_with("project-"));
+                        }
+                    }
+                }
+            }
+        })
         .on_menu_event(|app, event| {
+            if event.id().as_ref() == "add-property" {
+                let label = app.state::<Mutex<String>>().lock().ok().map(|label| label.clone());
+                if let Some(label) = label.filter(|label| label.starts_with("project-")) {
+                    if let Some(window) = app.get_webview_window(&label) {
+                        let _ = window.eval("window.dispatchEvent(new Event('morada:add-property'));");
+                    }
+                }
+            }
             if event.id().as_ref() == "new-project" {
                 if let Ok(launcher) = launcher_window(app, true) {
                     let _ = launcher.show();
