@@ -55,7 +55,7 @@ function initMap() {
     setStatus('Mapa indisponível: Leaflet não carregado');
     return;
   }
-  map = L.map('map', { zoomControl: true, preferCanvas: true, zoomAnimation: false }).setView([-23.56, -46.65], 11);
+  map = L.map('map', { zoomControl: true, preferCanvas: true, zoomAnimation: !window.matchMedia('(prefers-reduced-motion: reduce)').matches }).setView([-23.56, -46.65], 11);
   new ResizeObserver(() => map.invalidateSize({ pan: false })).observe($('map'));
   if (window.protomapsL) {
     updateBaseMapTheme();
