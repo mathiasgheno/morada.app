@@ -10,20 +10,15 @@
   <script type="module" src="/src/launcher.mjs"></script>
 </head>
 <body>
-  <aside class="launcher-sidebar">
+  <header class="launcher-brand">
     <a class="brand" href="/launcher.html" aria-label="Morada — seus projetos"><img src="/assets/morada-symbol.svg" alt="" width="68" height="68"><span>morada<span class="brand-dot">.</span><small>SEU PRÓXIMO LUGAR</small></span></a>
-    <div class="sidebar-section">SEU ESPAÇO</div>
-    <div class="nav-current"><span aria-hidden="true">▦</span> Meus projetos <span id="projectTotal" class="nav-count">–</span></div>
-    <div class="sidebar-bottom"><div class="small-location"><span class="live-dot"></span> São Paulo, SP</div><p>Novos caminhos.<br>Um lugar para chamar de seu.</p><span class="sidebar-line"></span><small>Feito para comparar com calma.</small></div>
-  </aside>
+  </header>
   <main class="launcher-main">
-    <div class="launcher-topline"><span class="eyebrow">ENCONTRE SEU LUGAR</span><span class="city-tag"><span class="live-dot"></span> São Paulo</span></div>
-    <header class="launcher-hero"><div><h1>Um novo endereço.<br><span>Várias possibilidades.</span></h1><p>Organize suas buscas em projetos.<br>Cada um com seu ponto de partida e seus lugares favoritos.</p></div><button id="newProject" class="primary-button" type="button"><span aria-hidden="true">＋</span> Novo projeto</button></header>
-    <section aria-labelledby="projectsTitle"><div class="section-heading"><h2 id="projectsTitle">Meus projetos</h2><span>Cada busca, uma possibilidade.</span></div><p id="launcherStatus" role="status">Carregando seus projetos…</p><div id="projectGrid" class="project-grid"></div></section>
-    <footer class="launcher-footer"><span>Seus imóveis. Suas anotações. Seu próximo passo.</span><span>morada<span class="brand-dot">.</span></span></footer>
+    <section aria-labelledby="projectsTitle"><div class="section-heading"><h1 id="projectsTitle">Meus projetos <span id="projectTotal" class="project-total">–</span></h1></div><p id="launcherStatus" role="status">Carregando seus projetos…</p><div id="projectGrid" class="project-grid"></div></section>
+    <button id="newProject" class="primary-button new-project-button" type="button"><span aria-hidden="true">＋</span> Novo projeto</button>
   </main>
   <dialog id="projectDialog" aria-labelledby="projectDialogTitle">
-    <form id="projectForm"><div class="dialog-heading"><div><span class="eyebrow">UMA NOVA POSSIBILIDADE</span><h2 id="projectDialogTitle">Novo projeto</h2></div><button id="closeProjectDialog" class="icon-button" type="button" aria-label="Fechar">✕</button></div>
+    <form id="projectForm"><div class="dialog-heading"><h2 id="projectDialogTitle">Novo projeto</h2><button id="closeProjectDialog" class="icon-button" type="button" aria-label="Fechar">✕</button></div>
       <label for="projectNameInput">Nome do projeto</label><input id="projectNameInput" required maxlength="120" placeholder="Ex.: Morando perto do Arca" autocomplete="off">
       <div class="field-pair"><div><label for="referenceName">Ponto de referência</label><input id="referenceName" required maxlength="120" placeholder="Ex.: Arca"></div><div><label for="referenceAddress">Endereço ou descrição</label><input id="referenceAddress" maxlength="400" placeholder="São Paulo, SP"></div></div>
       <details id="referenceDetails"><summary>Escolher localização no mapa</summary><p class="field-help">Clique no mapa para posicionar a referência. Preencher o endereço acima não move o ponto.</p><div id="referenceMap" aria-label="Escolher ponto de referência em São Paulo"></div><div class="field-pair coordinate-fields"><div><label for="referenceLat">Latitude</label><input id="referenceLat" type="number" step="any" min="-24.2" max="-23.1" required></div><div><label for="referenceLng">Longitude</label><input id="referenceLng" type="number" step="any" min="-47.2" max="-46" required></div></div></details>

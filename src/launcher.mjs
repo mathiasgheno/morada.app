@@ -15,8 +15,7 @@ async function load() {
     projects = await request('/api/projetos');
     $('projectTotal').textContent = projects.length;
     $('launcherStatus').textContent = '';
-    $('projectGrid').innerHTML = projects.map((project, index) => `<article class="project-card" data-id="${escapeHtml(project.id)}"><button class="project-card-main" data-action="open" aria-label="Abrir ${escapeHtml(project.name)}"><span class="project-card-topline"><span class="project-symbol" aria-hidden="true">⌂</span><span class="project-index">PROJETO ${String(index + 1).padStart(2, '0')}</span></span><h3>${escapeHtml(project.name)}</h3><p class="project-reference"><span aria-hidden="true">⌖</span>${escapeHtml(project.reference.name)}</p><span class="project-stats"><span><b>${project.propertyCount}</b> imóveis</span><span><b>${project.favoriteCount}</b> favoritos</span><span><b>${project.noteCount}</b> anotações</span></span></button><div class="project-card-footer"><button class="text-button" data-action="edit">Configurar</button><button class="text-button" data-action="duplicate">Duplicar</button><button class="text-button open-project" data-action="open">Abrir projeto ↗</button></div></article>`).join('') + '<button class="new-project-card" id="newProjectCard"><span class="plus" aria-hidden="true">＋</span>Criar uma nova busca<small>Outro ponto de partida. Novas possibilidades.</small></button>';
-    $('newProjectCard').addEventListener('click', () => openForm());
+    $('projectGrid').innerHTML = projects.map(project => `<article class="project-card" data-id="${escapeHtml(project.id)}"><button class="project-card-main" data-action="open" aria-label="Abrir ${escapeHtml(project.name)}"><span class="project-heading"><span class="project-symbol" aria-hidden="true">⌂</span><h2>${escapeHtml(project.name)}</h2><span class="project-arrow" aria-hidden="true">›</span></span><p class="project-reference"><span aria-hidden="true">⌖</span>${escapeHtml(project.reference.name)}</p><span class="project-stats"><span><b>${project.propertyCount}</b> imóveis</span><span><b>${project.favoriteCount}</b> favoritos</span><span><b>${project.noteCount}</b> anotações</span></span></button><div class="project-card-footer"><button class="text-button" data-action="edit">Configurar</button><button class="text-button" data-action="duplicate">Duplicar</button><button class="text-button open-project" data-action="open">Abrir projeto ↗</button></div></article>`).join('');
   } catch (error) { $('launcherStatus').textContent = `Não foi possível conectar ao serviço local do Morada. O desktop precisa dele para funcionar. Tente abrir novamente. Detalhe: ${error.message}`; }
 }
 function point() { return [Number($('referenceLat').value), Number($('referenceLng').value)]; }
@@ -43,6 +42,12 @@ function openForm(project, duplicate = false) {
   $('projectNameInput').focus();
 }
 $('newProject').addEventListener('click', () => openForm());
+function newProjectFromMenu() {
+  window.__moradaNewProjectRequested = false;
+  if (!$('projectDialog').open) openForm();
+}
+window.addEventListener('morada:new-project', newProjectFromMenu);
+if (window.__moradaNewProjectRequested) newProjectFromMenu();
 for (const id of ['closeProjectDialog', 'cancelProjectDialog']) $(id).addEventListener('click', () => $('projectDialog').close());
 $('referenceDetails').addEventListener('toggle', () => {
   if (!$('referenceDetails').open) return;
