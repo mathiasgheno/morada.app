@@ -309,8 +309,22 @@ async function refreshListings() {
     const response = await fetch('/api/anuncios', { signal: AbortSignal.timeout(120000) });
     if (!response.ok) throw new Error(`Status dos anúncios: HTTP ${response.status}`);
     const result = await response.json();
+    const previousIds = filtered().map(property => property.id);
     state.listings = result.listings;
-    applyAmenityFilters();
+    const nextIds = filtered().map(property => property.id);
+    if (previousIds.length !== nextIds.length || previousIds.some((id, index) => id !== nextIds[index])) {
+      applyAmenityFilters({ preserveCards: true });
+    }
+    // A consulta muda o status e seu horário, não as fotos ou o carrossel.
+    $('propertyList').querySelectorAll('.property-card').forEach(card => {
+      const dot = card.querySelector('.listing-status');
+      const template = document.createElement('template');
+      template.innerHTML = listingDot(card.dataset.id);
+      const updated = template.content.firstElementChild;
+      if (dot) {
+        for (const attribute of ['class', 'title', 'aria-label']) dot.setAttribute(attribute, updated.getAttribute(attribute));
+      }
+    });
     clearTimeout(listingsTimer);
     listingsTimer = setTimeout(refreshListings, result.checking ? 2000 : 60000);
   } catch {
@@ -322,13 +336,29 @@ async function refreshListings() {
     listingsTimer = setTimeout(refreshListings, 60000);
   } finally { checkingListings = false; }
 }
-function renderCards() {
+function renderCards({ preserveCards = false } = {}) {
   $('clearSelection').disabled = !state.selected;
   $('toggleNearby').disabled = !state.selected;
   $('refreshButton').disabled = !state.selected?.coordinates;
   const results = filtered();
   $('listingCount').textContent = `${results.length} ${results.length === 1 ? 'imóvel encontrado' : 'imóveis encontrados'}`;
-  $('propertyList').innerHTML = results.length ? results.map(cardHtml).join('') : '<div class="empty-state"><strong>Nenhum imóvel encontrado</strong>Tente outra busca ou importe um JSON com imóveis.</div>';
+  const list = $('propertyList');
+  if (preserveCards && results.length) {
+    const existing = new Map([...list.querySelectorAll('.property-card')].map(card => [card.dataset.id, card]));
+    const ids = new Set(results.map(property => property.id));
+    for (const child of [...list.children]) if (!ids.has(child.dataset.id)) child.remove();
+    results.forEach((property, index) => {
+      let card = existing.get(property.id);
+      if (!card) {
+        const template = document.createElement('template');
+        template.innerHTML = cardHtml(property);
+        card = template.content.firstElementChild;
+      }
+      if (list.children[index] !== card) list.insertBefore(card, list.children[index] || null);
+    });
+  } else {
+    list.innerHTML = results.length ? results.map(cardHtml).join('') : '<div class="empty-state"><strong>Nenhum imóvel encontrado</strong>Tente outra busca ou importe um JSON com imóveis.</div>';
+  }
   photoObserver.disconnect();
   $('propertyList').querySelectorAll('.property-card').forEach(card => photoObserver.observe(card));
 }
@@ -662,7 +692,7 @@ $('propertyList').addEventListener('keydown', event => {
     event.preventDefault(); selectProperty(event.target.closest('.property-card').dataset.id);
   }
 });
-function applyAmenityFilters() {
+function applyAmenityFilters(options) {
   $('favoritesOnTop').disabled = $('favoritesOnly').checked;
   state.amenities = new Set([...document.querySelectorAll('[data-amenity]:checked')].map(input => input.dataset.amenity));
   const results = filtered();
@@ -677,7 +707,7 @@ function applyAmenityFilters() {
     $('selectedSubtitle').textContent = 'Selecione um imóvel nos resultados filtrados.';
     setStatus(results.length ? 'Selecione um imóvel para explorar a região' : 'Nenhum imóvel corresponde aos filtros');
   }
-  renderCards();
+  renderCards({ preserveCards: options?.preserveCards === true });
   renderPropertyMarkers();
 }
 document.querySelectorAll('[data-amenity]').forEach(input => input.addEventListener('change', applyAmenityFilters));
