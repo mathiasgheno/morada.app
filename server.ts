@@ -8,7 +8,7 @@ const server = Bun.serve({
     const pathname = decodeURIComponent(new URL(request.url).pathname);
     if (pathname === '/api/anuncios') {
       try {
-        void verificarAnuncios().catch(error => console.error('Verificação de anúncios:', error.message));
+        await verificarAnuncios();
         return Response.json(estadoAnuncios(), { headers: { 'Cache-Control': 'no-store' } });
       }
       catch { return Response.json({ error: 'Falha ao consultar anúncios' }, { status: 503 }); }

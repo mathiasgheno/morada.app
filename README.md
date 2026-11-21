@@ -14,6 +14,10 @@ O tema claro/escuro acompanha automaticamente a preferência do sistema operacio
 
 ## Cadastro por origem
 
+`bun run update:status` consulta os anúncios do QuintoAndar (até 5 em paralelo) e grava `statusAnuncio` no `imoveis.json`. O cadastro `add:imovel` inclui esse campo automaticamente. Ele contém `status` (`active`, `inactive` ou `unknown`), `checkedAt`, `lastAttemptAt`, `method` e `error`. HTTP 404/410 confirma indisponibilidade; acesso HTTP 200 à página do imóvel confirma anúncio acessível, não garantia de locação. Falhas de rede, bloqueios e respostas não conclusivas preservam o último status confirmado.
+
+Na abertura, os cards usam imediatamente os status salvos no JSON. A interface consulta o servidor em segundo plano a cada minuto, sem polling de 2 segundos; o servidor consulta apenas os registros cuja última tentativa tem pelo menos um minuto e persiste os resultados com trava e gravação atômica. A execução manual de `update:status` força uma nova consulta. O VivaReal mantém seu status da importação, sem consultas automáticas ao QuintoAndar.
+
 `bun run add:imovel:viva-real "URL_DO_ANUNCIO"` abre Chrome visível, normaliza o anúncio com o scraper isolado, carrega estabelecimentos locais e acrescenta ao JSON com `origem: "viva-real"` e URL original. Requer Chrome instalado; o Bun resolve o pacote Playwright automaticamente. Anúncios existentes não são duplicados. Uma colisão de ID com outra origem é rejeitada para preservar favoritos e anotações. Bloqueios e falhas da extração preservam a lista. O cadastro antigo segue com `bun run add:imovel ID`, usando `origem: "quinto-andar"`.
 
 O status do Viva Real representa o acesso ao anúncio verificado na importação, com data no tooltip, e não a disponibilidade garantida para locação. Não se abre Chrome automaticamente a cada minuto: a checagem periódica e a atualização de vídeos do QuintoAndar ignoram registros Viva Real. Os campos ausentes permanecem nulos.

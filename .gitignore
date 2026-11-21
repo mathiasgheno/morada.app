@@ -6,6 +6,7 @@ node_modules/
 !.env.example
 imoveis.json.lock
 imoveis.json.tmp
+imoveis.json.status-*.tmp
 *.osm.pbf
 .venv/
 __pycache__/

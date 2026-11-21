@@ -2,6 +2,7 @@ import { readFile, writeFile, rename, unlink } from 'node:fs/promises';
 import { consultarVideo, videoFailure } from './videos.mjs';
 import { consultarEstabelecimentos } from './estabelecimentos.mjs';
 import { adquirirTrava } from './arquivo-lock.mjs';
+import { consultarStatusAnuncio } from './status-anuncios.mjs';
 
 const id = process.argv[2];
 const file = new URL('./imoveis.json', import.meta.url);
@@ -35,6 +36,7 @@ try {
       throw new Error('Resposta sem dados reconhecíveis de imóvel; lista preservada.');
     }
     const property = { ...data, id: Number(id), origem: 'quinto-andar' };
+    property.statusAnuncio = await consultarStatusAnuncio(id);
     try { [property.nearbyEstablishments] = await consultarEstabelecimentos([property]); }
     catch (error) {
       property.nearbyEstablishments = { radius: 350, items: [], checkedAt: null, error: error.message };
