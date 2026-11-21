@@ -11,6 +11,7 @@ const state = {
   amenities: new Set(),
   hiddenMetroLines: new Set(),
   listings: {},
+  listingsPending: true,
   favorites: new Set(),
 };
 let map, propertyLayer, poiLayer, metroLayer, radiusLayer, metroRenderer;
@@ -129,7 +130,11 @@ function filtered({ ignoreListingStatus = false } = {}) {
   const search = state.query.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const results = sortProperties(state.properties.filter(p => {
     if ($('favoritesOnly').checked && !state.favorites.has(p.id)) return false;
-    if (!ignoreListingStatus && $('activeListingsOnly').checked && state.listings[p.id]?.status !== 'active') return false;
+    if (!ignoreListingStatus && $('activeListingsOnly').checked) {
+      const listing = state.listings[p.id];
+      // Ausência de resposta ainda não significa anúncio indisponível.
+      if (listing?.status !== 'active' && !(state.listingsPending && !listing)) return false;
+    }
     if (![...state.amenities].every(key => p[key])) return false;
     const text = [p.id, p.title, p.street, p.neighborhood, p.city, p.state].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return text.includes(search);
@@ -299,7 +304,7 @@ videoDialog.addEventListener('close', () => {
 });
 function listingDot(id) {
   const result = state.listings[id];
-  const label = result?.status === 'active' ? 'Anúncio acessível' : result?.status === 'inactive' ? 'Anúncio indisponível (404/410)' : 'Disponibilidade do anúncio não confirmada';
+  const label = result?.status === 'active' ? 'Anúncio acessível' : result?.status === 'inactive' ? 'Anúncio indisponível (404/410)' : !result && state.listingsPending ? 'Verificando disponibilidade do anúncio' : 'Disponibilidade do anúncio não confirmada';
   const title = `${label}${result?.checkedAt ? ` · Verificado em ${new Date(result.checkedAt).toLocaleString('pt-BR')}` : ''}${result?.method === 'browser-page-access' ? ' · Viva Real: última consulta na importação, sem atualização automática' : ''}`;
   return `<span class="listing-status ${result?.status || 'unknown'}" role="img" aria-label="${escapeHtml(title)}" title="${escapeHtml(title)}"></span>`;
 }
@@ -314,6 +319,7 @@ async function refreshListings() {
     const result = await response.json();
     const previousIds = filtered().map(property => property.id);
     state.listings = result.listings;
+    state.listingsPending = result.checking === true;
     const nextIds = filtered().map(property => property.id);
     if (previousIds.length !== nextIds.length || previousIds.some((id, index) => id !== nextIds[index])) {
       applyAmenityFilters({ preserveCards: true });
