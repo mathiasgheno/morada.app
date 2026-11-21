@@ -7,6 +7,7 @@ node_modules/
 imoveis.json.lock
 imoveis.json.tmp
 imoveis.json.status-*.tmp
+imoveis.json.notes-*.tmp
 *.osm.pbf
 .venv/
 __pycache__/

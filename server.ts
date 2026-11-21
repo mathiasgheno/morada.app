@@ -1,11 +1,26 @@
 import { resolve, sep } from 'node:path';
 import { verificarAnuncios, estadoAnuncios } from './anuncios';
+import { lerAnotacoes, salvarAnotacoes } from './anotacoes.mjs';
 
 const root = import.meta.dir;
 const server = Bun.serve({
   port: Number(process.env.PORT || 8000),
   async fetch(request) {
     const pathname = decodeURIComponent(new URL(request.url).pathname);
+    if (pathname === '/api/anotacoes') {
+      const headers = { 'Cache-Control': 'no-store' };
+      if (request.method === 'GET') {
+        try { return Response.json(await lerAnotacoes(), { headers }); }
+        catch { return Response.json({ error: 'Não foi possível ler as anotações.' }, { status: 500, headers }); }
+      }
+      if (request.method !== 'PUT') return new Response(null, { status: 405, headers: { Allow: 'GET, PUT' } });
+      if (request.headers.get('origin') !== new URL(request.url).origin || !request.headers.get('content-type')?.startsWith('application/json')) return new Response('Forbidden', { status: 403 });
+      try {
+        const body = await request.text();
+        if (body.length > 5_000_000) return new Response('Arquivo maior que 5 MB', { status: 413 });
+        return Response.json(await salvarAnotacoes(JSON.parse(body)), { headers });
+      } catch (error) { return Response.json({ error: error.message }, { status: 400, headers }); }
+    }
     if (pathname === '/api/anuncios') {
       try {
         await verificarAnuncios();

@@ -580,6 +580,7 @@ async function calculateScore(property) {
 function loadData(json, sourceLabel = 'arquivo') {
   const properties = extractProperties(json);
   state.properties = properties;
+  propertyNotes.load(properties);
   state.listings = Object.fromEntries(properties.map(property => [property.id, property.raw.statusAnuncio || { status: 'unknown', checkedAt: null }]));
   refreshListings();
   state.pois.clear(); state.scores.clear(); state.metros.clear(); state.poisPromises.clear();

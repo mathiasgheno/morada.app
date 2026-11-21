@@ -110,11 +110,11 @@
       <label for="noteText">Seu comentário sobre o imóvel</label>
       <textarea id="noteText" rows="8" maxlength="20000" placeholder="O que você achou? Pontos positivos, dúvidas, detalhes da visita…"></textarea>
       <p id="noteSaveStatus" role="status"></p>
-      <small>Salvo somente neste navegador. Use “Minhas anotações” para exportar um backup. Apague o texto para remover a anotação.</small>
+      <small>Salvo no arquivo de imóveis. Use “Minhas anotações” para exportar um backup. Apague o texto para remover a anotação.</small>
     </dialog>
     <dialog id="notesBackupDialog" class="notes-dialog" aria-labelledby="notesBackupTitle">
       <div class="video-heading"><strong id="notesBackupTitle">Minhas anotações</strong><button id="closeNotesBackup" type="button" aria-label="Fechar opções de backup">✕</button></div>
-      <p>As anotações ficam neste navegador, separadas dos dados dos anúncios. Limpar os dados do site ou trocar domínio/porta pode deixá-las indisponíveis. Exporte para guardar uma cópia.</p>
+      <p>As anotações ficam no arquivo de imóveis e são compartilhadas entre o navegador e o desktop. Você também pode exportar ou importar um backup separado.</p>
       <div class="notes-backup-actions"><button id="exportNotes" type="button">Exportar backup JSON</button><button id="importNotesButton" type="button">Importar backup JSON</button><input id="importNotes" type="file" accept=".json,application/json" hidden></div>
       <p id="notesBackupStatus" role="status"></p>
     </dialog>

@@ -8,7 +8,7 @@ O Tauri inicia automaticamente o servidor Bun na porta 1420 e aguarda sua dispon
 
 Esta etapa valida a execução local; ainda não é uma distribuição independente. O servidor Bun e as ferramentas precisam estar instalados. A preparação de assets para build é uma cópia privada dos dados atuais em `desktop-dist/`, ignorada pelo Git, e o empacotamento está desativado. A versão de produção ainda precisa integrar a API de anúncios, o auxiliar Bun e o armazenamento próprio antes de ser distribuída. Não publique essa cópia com seus imóveis.
 
-As anotações do navegador não são migradas automaticamente: o armazenamento da webview é separado. Exporte em “Minhas anotações” na versão web e importe na janela desktop se quiser transferi-las. Bibliotecas de CDN, fotos, vídeos e consulta de status continuam dependendo de internet.
+As anotações agora ficam em `note: { text, updatedAt }` em cada registro do `imoveis.json`, compartilhadas entre web e desktop. A edição salva automaticamente no arquivo pelo servidor Bun, com trava e gravação atômica, preservando outros campos. A interface só informa que salvou após a confirmação do servidor. O botão “Minhas anotações” continua exportando/importando o formato de backup anterior; IDs ausentes são rejeitados sem gravação parcial. Dados antigos no localStorage não são apagados nem importados automaticamente. Bibliotecas de CDN, fotos, vídeos e consulta de status continuam dependendo de internet.
 
 O tema claro/escuro acompanha automaticamente a preferência do sistema operacional (`prefers-color-scheme`), inclusive quando ela muda com o site aberto. O mapa local usa o estilo correspondente do Protomaps; fotos e vídeos não são invertidos. Não há preferência manual salva no navegador.
 
@@ -24,7 +24,7 @@ O status do Viva Real representa o acesso ao anúncio verificado na importação
 
 ## Anotações pessoais
 
-“Anotar” em cada card abre um comentário com salvamento automático no localStorage (`morada.notes.v1`), separado do JSON da API. Texto vazio remove a anotação. “Minhas anotações” permite exportar/importar backup JSON versionado. Conflitos de texto exigem uma decisão antes de substituir; dados existentes são preservados por padrão. O armazenamento pertence à origem (protocolo, domínio e porta), normalmente sobrevive a reinícios, mas pode ser apagado pelo navegador. Exporte backups regularmente; o arquivo pode conter informações pessoais. Falhas de armazenamento são apresentadas na modal e não confirmadas como salvamento.
+“Anotar” em cada card abre um comentário com salvamento automático no campo `note` do imóvel em `imoveis.json`. Texto vazio remove a anotação. “Minhas anotações” permite exportar/importar o backup JSON versionado existente. Conflitos de texto exigem uma decisão antes de substituir; dados existentes são preservados por padrão. O arquivo completo de imóveis também inclui as anotações. Falhas de gravação são apresentadas na modal, que só fecha após confirmar o salvamento. O localStorage não é mais usado para novas anotações.
 
 ## Favoritos pessoais
 
