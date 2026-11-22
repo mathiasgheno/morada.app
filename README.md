@@ -16,7 +16,7 @@ Pastas de dados do aplicativo instalado:
 
 As pastas contêm `projetos/` e `recursos/`. O modo `desktop:dev` continua usando os projetos locais do repositório, com identidade de WebView separada (`app.morada.desktop.dev`).
 
-A pipeline `.github/workflows/desktop-builds.yml` roda nesta branch e permite builds manuais. Valida testes e gera DMGs para Apple Silicon/Intel, NSIS para Windows x64 e AppImage/DEB para Linux x64/ARM64. Os pacotes ficam como artefatos por 14 dias; não há publicação automática de release. Cada variante testa o runtime e a persistência em diretório temporário; no macOS, testa também o Bun já assinado dentro do `.app`. `bun desktop/smoke.mjs` executa essa validação após a preparação.
+A pipeline `.github/workflows/desktop-builds.yml` roda automaticamente nos pushes desta branch. Também define builds manuais por plataforma; o botão de execução manual passa a ficar disponível quando o workflow estiver na branch padrão do GitHub. Valida testes e gera DMGs para Apple Silicon/Intel, NSIS para Windows x64 e AppImage/DEB para Linux x64/ARM64. Os pacotes ficam como artefatos por 14 dias; não há publicação automática de release. Cada variante testa o runtime e a persistência em diretório temporário; no macOS, testa também o Bun já assinado dentro do `.app`. `bun desktop/smoke.mjs` executa essa validação após a preparação.
 
 Estes são pacotes de teste: o macOS recebe assinatura ad hoc, sem notarização Apple, e o Windows ainda não usa Authenticode. Assinatura de distribuição, atualizações automáticas e release pública serão etapas posteriores.
 
@@ -56,7 +56,7 @@ bun run update:caminhabilidade --project ID
 
 O gerador antigo com IDs pessoais fixos foi removido. Os arquivos pessoais legados (`imoveis.json`, `favoritos.json`, `imoveis-erros.json` e o gerador com IDs fixos) foram removidos também do histórico das branches locais, após validação da reimportação. O histórico de evolução do código foi preservado.
 
-O servidor HTTP local é único e escuta apenas em `127.0.0.1`. O launcher exibe erro de conexão caso não consiga acessar o serviço. A distribuição independente e a escolha automática de porta ainda não fazem parte deste protótipo.
+O servidor HTTP local escuta apenas em `127.0.0.1`. No aplicativo instalado, o desktop escolhe uma porta livre e inicia o Bun incluído no pacote; uma falha de inicialização é apresentada em diálogo nativo. No desenvolvimento, a porta continua sendo 1420.
 
 No formulário de projeto, a cidade é fixa em “São Paulo, São Paulo”. Selecionar um ponto no mapa ou alterar suas coordenadas busca um endereço aproximado pela rota local `GET /api/endereco?lat=…&lng=…`, que consulta Photon/OpenStreetMap. A consulta depende de internet, usa fila de uma requisição por segundo e cache em memória. Respostas antigas não sobrescrevem uma seleção nova nem uma edição manual. O servidor do geocodificador pode ser trocado por `MORADA_GEOCODER_URL`. Abrir o seletor de mapa preserva o endereço existente; o preenchimento automático ocorre ao escolher uma localização. Fonte e condições do serviço: https://github.com/komoot/photon.
 
@@ -64,15 +64,15 @@ O ponto de referência é opcional. Novos projetos começam sem referência; mar
 
 “Excluir” no card do launcher pede confirmação com o nome do projeto, fecha sua janela e o remove da lista. Os arquivos são movidos para `projetos/.lixeira/`, sem apagar dados compartilhados. “Desfazer” restaura a última exclusão durante a sessão do launcher. Projetos com atualização em andamento não são excluídos até a liberação das travas.
 
-## Desktop com Tauri — primeiro protótipo
+## Desktop com Tauri — desenvolvimento
 
 Na branch `feature/desktop`, execute `bun install` e `bun run desktop:dev` para abrir a aplicação em uma janela Tauri. Requer Bun, Rust/Cargo e as dependências de desenvolvimento do Tauri para seu sistema: https://v2.tauri.app/start/prerequisites/. O launcher também encontra o Cargo instalado em `~/.cargo/bin`.
 
 O Tauri inicia automaticamente o servidor Bun na porta 1420 e aguarda sua disponibilidade. A versão web permanece disponível pelos comandos anteriores, na porta 8000. Fechar a janela encerra a sessão desktop. Os dados pessoais ficam exclusivamente nas pastas de projetos, compartilhadas pela web e pelo desktop.
 
-Esta etapa valida a execução local; ainda não é uma distribuição independente. O servidor Bun e as ferramentas precisam estar instalados. A preparação de assets copia apenas a interface e bases compartilhadas para `desktop-dist/`, ignorada pelo Git; não inclui imóveis ou favoritos. O empacotamento está desativado. A versão de produção ainda precisa integrar a API de anúncios, o auxiliar Bun e o armazenamento próprio antes de ser distribuída.
+Para desenvolver, Bun e as ferramentas de build precisam estar instalados. Para o usuário final, os pacotes de teste descritos no início incluem o Bun e o servidor. `desktop/prepare.mjs` monta os recursos em `desktop-resources/` e o binário auxiliar em `src-tauri/binaries/`, sem dados pessoais. Esses diretórios e `desktop-dist/` são ignorados pelo Git.
 
-As anotações agora ficam em `note: { text, updatedAt }` em cada registro do `imoveis.json`, compartilhadas entre web e desktop. A edição salva automaticamente no arquivo pelo servidor Bun, com trava e gravação atômica, preservando outros campos. A interface só informa que salvou após a confirmação do servidor. O botão “Minhas anotações” continua exportando/importando o formato de backup anterior; IDs ausentes são rejeitados sem gravação parcial. Dados antigos no localStorage não são apagados nem importados automaticamente. Bibliotecas de CDN, fotos, vídeos e consulta de status continuam dependendo de internet.
+As anotações agora ficam em `note: { text, updatedAt }` em cada registro do `imoveis.json`, compartilhadas entre web e desktop. A edição salva automaticamente no arquivo pelo servidor Bun, com trava e gravação atômica, preservando outros campos. A interface só informa que salvou após a confirmação do servidor. O botão “Minhas anotações” continua exportando/importando o formato de backup anterior; IDs ausentes são rejeitados sem gravação parcial. Dados antigos no localStorage não são apagados nem importados automaticamente. Fotos, vídeos e consulta de status continuam dependendo de internet; as bibliotecas da interface são locais.
 
 O menu nativo `View → Visual` oferece `Light`, `Dark` e `Sistema` (padrão). A escolha visual é lembrada no localStorage da origem, compartilhada entre suas janelas; as anotações continuam exclusivamente no JSON. Em Sistema, mudanças do sistema operacional são acompanhadas automaticamente. Launcher, projetos e mapas seguem o tema escolhido, com transição de cores de 180 ms e respeito a movimento reduzido; fotos e vídeos não são invertidos.
 
@@ -128,7 +128,7 @@ As linhas de metrô são servidas pelo Bun a partir de `metro.json`, sem consult
 
 Execute `bun install` e `bun run dev`, depois abra **http://localhost:8000**. O launcher permite criar ou importar um projeto e abri-lo em outra aba. `bun start` executa sem observar alterações. Não abra os arquivos diretamente com `file://`: a aplicação usa as APIs do servidor Bun.
 
-O servidor suporta HTTP Range para ler somente os trechos necessários do mapa local de 99 MB. Bibliotecas de CDN, fotos, vídeos, cadastro de anúncios, geocodificação e atualização de status dependem de internet; a consulta aos estabelecimentos já processados é local.
+O servidor suporta HTTP Range para ler somente os trechos necessários do mapa local de 99 MB. Fotos, vídeos, cadastro de anúncios, geocodificação e atualização de status dependem de internet; a consulta aos estabelecimentos já processados é local.
 
 ## Estrutura
 
@@ -173,7 +173,7 @@ Referências: [Walk Score API](https://www.walkscore.com/professional/api.php), 
 
 | Componente | Tecnologia / serviço | Condição |
 | --- | --- | --- |
-| Mapa interativo | [Leaflet 1.9.4](https://leafletjs.com/) | Open source (BSD-2-Clause) via CDN |
+| Mapa interativo | [Leaflet 1.9.4](https://leafletjs.com/) | Open source (BSD-2-Clause), incluído localmente |
 | Mapa base | PMTiles local / Protomaps | Arquivo compartilhado, leitura parcial por HTTP Range |
 | Estabelecimentos e metrô | Bases locais derivadas do OpenStreetMap | Compartilhadas pelos projetos, sem consulta por seleção |
 | Caminhabilidade | Algoritmo local simples com dados OSM | Sem chave, não é Walk Score oficial |
