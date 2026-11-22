@@ -72,7 +72,19 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev
       - run: bun install --frozen-lockfile
       - name: Build dos instaladores de teste
-        run: bun run desktop:build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
+        env:
+          # Preserva o Bun pré-compilado e evita o strip antigo do linuxdeploy.
+          NO_STRIP: ${{ matrix.os == 'linux' && 'true' || '' }}
+        run: bun run desktop:build --verbose --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
+      - name: Validar runtime dentro do pacote Debian
+        if: matrix.os == 'linux'
+        shell: bash
+        run: |
+          package=$(find src-tauri/target -path '*/bundle/deb/*.deb' -print -quit)
+          dpkg-deb -x "$package" "$RUNNER_TEMP/morada-deb"
+          binary=$(find "$RUNNER_TEMP/morada-deb" -name morada-runtime -type f -print -quit)
+          server=$(find "$RUNNER_TEMP/morada-deb" -name server.ts -type f -print -quit)
+          bun desktop/smoke.mjs --binary "$binary" --resources "$(dirname "$server")"
       - name: Validar runtime e persistência sem dados pessoais
         run: bun desktop/smoke.mjs
       - name: Validar Bun dentro do pacote macOS assinado ad hoc
