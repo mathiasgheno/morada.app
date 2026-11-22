@@ -30,5 +30,12 @@
       <p id="projectFormStatus" role="status"></p><div class="dialog-actions"><button id="cancelProjectDialog" class="secondary-button" type="button">Cancelar</button><button id="saveProject" class="primary-button" type="submit">Criar projeto</button></div>
     </form>
   </dialog>
+  <dialog id="deleteProjectDialog" aria-labelledby="deleteProjectTitle">
+    <div class="dialog-heading"><h2 id="deleteProjectTitle">Excluir projeto?</h2></div>
+    <p>O projeto <strong id="deleteProjectName"></strong> será removido da lista e sua janela será fechada.</p>
+    <p class="field-help">Os imóveis, favoritos e anotações ficarão na lixeira local. Você poderá desfazer a exclusão.</p>
+    <p id="deleteProjectStatus" role="status"></p>
+    <div class="dialog-actions"><button id="cancelDeleteProject" class="secondary-button" type="button">Cancelar</button><button id="confirmDeleteProject" class="primary-button danger-button" type="button">Excluir projeto</button></div>
+  </dialog>
 </body>
 </html>

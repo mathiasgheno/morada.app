@@ -80,10 +80,21 @@ async fn open_project(app: tauri::AppHandle, window: tauri::WebviewWindow, id: S
     Ok(())
 }
 
+#[tauri::command]
+async fn close_project(app: tauri::AppHandle, window: tauri::WebviewWindow, id: String) -> Result<(), String> {
+    if window.label() != "main" || id.is_empty() || id.len() > 80 || !id.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-') {
+        return Err("Projeto inválido".into());
+    }
+    if let Some(project) = app.get_webview_window(&format!("project-{}", id)) {
+        project.destroy().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(Mutex::new(String::from("main")))
-        .invoke_handler(tauri::generate_handler![open_project, set_theme_mode])
+        .invoke_handler(tauri::generate_handler![open_project, close_project, set_theme_mode])
         .setup(|app| {
             // Mantém os menus nativos de edição e gerenciamento das janelas.
             let menu = Menu::default(app.handle())?;

@@ -24,6 +24,8 @@ No formulário de projeto, a cidade é fixa em “São Paulo, São Paulo”. Sel
 
 O ponto de referência é opcional. Novos projetos começam sem referência; marque “Definir ponto de referência” para configurar uma, ou faça isso depois em “Configurar”. Sem referência, não há marcador de trabalho nem ordenação por distância; o mapa enquadra apenas os imóveis. Projetos existentes preservam sua referência.
 
+“Excluir” no card do launcher pede confirmação com o nome do projeto, fecha sua janela e o remove da lista. Os arquivos são movidos para `projetos/.lixeira/`, sem apagar dados compartilhados ou os arquivos originais da raiz. “Desfazer” restaura a última exclusão durante a sessão do launcher. A cópia inicial não é recriada após uma exclusão. Projetos com atualização em andamento não são excluídos até a liberação das travas.
+
 ## Desktop com Tauri — primeiro protótipo
 
 Na branch `feature/desktop`, execute `bun install` e `bun run desktop:dev` para abrir a aplicação em uma janela Tauri. Requer Bun, Rust/Cargo e as dependências de desenvolvimento do Tauri para seu sistema: https://v2.tauri.app/start/prerequisites/. O launcher também encontra o Cargo instalado em `~/.cargo/bin`.

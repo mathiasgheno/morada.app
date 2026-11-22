@@ -33,6 +33,11 @@ const server = Bun.serve({
       try { return Response.json(await consultarEndereco(Number(parameters.get('lat')), Number(parameters.get('lng'))), { headers: jsonHeaders }); }
       catch (error) { return Response.json({ error: error.message }, { status: 400, headers: jsonHeaders }); }
     }
+    if (pathname === '/api/projetos/restaurar' && request.method === 'POST') {
+      if (!permittedWrite(request)) return new Response('Forbidden', { status: 403 });
+      try { return Response.json(await projects.restaurar((await bodyJSON(request)).token)); }
+      catch (error) { return Response.json({ error: error.message }, { status: 400 }); }
+    }
     const projectRoute = /^\/api\/projetos(?:\/([a-z0-9-]+)(?:\/(imoveis))?)?$/.exec(pathname);
     if (projectRoute) {
       try {
@@ -54,9 +59,10 @@ const server = Bun.serve({
           return Response.json({ message: stdout.trim() });
         }
         if (request.method === 'GET') return Response.json(id ? await projects.ler(id) : await projects.listar(), { headers: jsonHeaders });
-        if (!['POST', 'PUT'].includes(request.method)) return new Response(null, { status: 405 });
+        if (!['POST', 'PUT', 'DELETE'].includes(request.method)) return new Response(null, { status: 405 });
         if (!permittedWrite(request)) return new Response('Forbidden', { status: 403 });
         const input = await bodyJSON(request);
+        if (id && request.method === 'DELETE') return Response.json(await projects.excluir(id, input.name));
         if (id && request.method === 'PUT') return Response.json(await projects.atualizar(id, input));
         if (!id && request.method === 'POST') {
           if (input.duplicateFrom && !Object.hasOwn(input, 'reference')) input.reference = (await projects.ler(input.duplicateFrom)).reference;

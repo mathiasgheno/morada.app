@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { criarRepositorioProjetos, DEFAULT_REFERENCE, validarIdProjeto } from '../projetos.mjs';
 import { salvarAnotacoes } from '../anotacoes.mjs';
+import { adquirirTrava } from '../arquivo-lock.mjs';
 
 test('Projetos copiam o legado uma vez, isolam cópias e compartilham apenas os assets', async () => {
   const temp = await mkdtemp(join(tmpdir(), 'morada-projects-'));
@@ -47,5 +48,22 @@ test('Projetos copiam o legado uma vez, isolam cópias e compartilham apenas os 
     await assert.rejects(repository.criar({ name: '', reference: DEFAULT_REFERENCE }));
     await assert.rejects(repository.criar({ name: 'Outra cidade', reference: { ...DEFAULT_REFERENCE, lat: 0 } }));
     for (const id of ['../', '/tmp', 'a/b', '.', 'a%2fb']) assert.throws(() => validarIdProjeto(id));
+    const beforeDeletion = (await repository.listar()).length;
+    const release = adquirirTrava(new URL(`${source.href}.lock`));
+    try { await assert.rejects(repository.excluir(initial.id, initial.name), /atualização está ativa/); }
+    finally { release(); }
+    assert.equal(await readFile(source, 'utf8'), original);
+    await assert.rejects(repository.excluir(initial.id, 'Outro nome'), /nome/);
+    assert.equal((await repository.listar()).length, beforeDeletion);
+    const deleted = await repository.excluir(initial.id, initial.name);
+    assert.equal((await repository.listar()).length, beforeDeletion - 1);
+    await assert.rejects(repository.ler(initial.id));
+    await repository.inicializar();
+    assert.equal((await repository.listar()).length, beforeDeletion - 1);
+    assert.equal(await readFile(new URL('imoveis.json', legacyDirectory), 'utf8'), original);
+    await repository.restaurar(deleted.token);
+    assert.equal((await repository.listar()).length, beforeDeletion);
+    assert.equal(await readFile(await repository.arquivo(initial.id, 'imoveis.json'), 'utf8'), original);
+    await assert.rejects(repository.restaurar('../imoveis.json'));
   } finally { await rm(temp, { recursive: true, force: true }); }
 });

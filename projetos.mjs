@@ -94,5 +94,28 @@ export function criarRepositorioProjetos({ directory = new URL('./projetos/', im
       return config;
     } finally { await rm(temporary, { force: true }); release(); }
   }
-  return { inicializar, listar, criar, ler, arquivo, atualizar };
+  async function excluir(id, confirmationName) {
+    const releases = [];
+    try {
+      for (const name of ['projeto.json', 'imoveis.json', 'favoritos.json']) releases.push(adquirirTrava(new URL(`${name}.lock`, folder(id))));
+      const project = await ler(id);
+      if (confirmationName !== project.name) throw new Error('O nome do projeto mudou. Atualize a lista e tente novamente.');
+      const trash = new URL('.lixeira/', directory);
+      await mkdir(trash, { recursive: true });
+      const token = `${id}-${randomUUID()}`;
+      const destination = new URL(`${token}/`, trash);
+      await rename(folder(id), destination);
+      // As travas também foram movidas; os dados não são apagados.
+      for (const name of ['projeto.json', 'imoveis.json', 'favoritos.json']) await rm(new URL(`${name}.lock`, destination), { force: true });
+      return { project, token };
+    } finally { releases.reverse().forEach(release => release()); }
+  }
+  async function restaurar(token) {
+    if (typeof token !== 'string' || !/^[a-z0-9][a-z0-9-]{1,120}$/.test(token)) throw new Error('Identificador de recuperação inválido.');
+    const source = new URL(`.lixeira/${token}/`, directory);
+    const project = JSON.parse(await readFile(new URL('projeto.json', source), 'utf8'));
+    await rename(source, folder(project.id));
+    return project;
+  }
+  return { inicializar, listar, criar, ler, arquivo, atualizar, excluir, restaurar };
 }

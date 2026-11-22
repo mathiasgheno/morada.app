@@ -1,6 +1,24 @@
 const $ = id => document.getElementById(id);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 let projects = [];
+let deletingProject = null;
+let deletePending = false;
+let lastDeleted = null;
+function showDeletionNotice() {
+  $('launcherStatus').replaceChildren();
+  if (!lastDeleted) return;
+  $('launcherStatus').append(document.createTextNode(`Projeto “${lastDeleted.name}” excluído.`));
+  const undo = document.createElement('button');
+  undo.id = 'undoDeleteProject';
+  undo.type = 'button';
+  undo.textContent = 'Desfazer';
+  undo.addEventListener('click', async () => {
+    undo.disabled = true;
+    try { await request('/api/projetos/restaurar', { token: lastDeleted.token }); lastDeleted = null; await load(); }
+    catch (error) { $('launcherStatus').textContent = `Não foi possível restaurar: ${error.message}`; }
+  });
+  $('launcherStatus').append(undo);
+}
 let editing = null;
 let duplicateFrom = null;
 let previewMap, previewMarker, previewLayer;
@@ -64,8 +82,8 @@ async function load() {
   try {
     projects = await request('/api/projetos');
     $('projectTotal').textContent = projects.length;
-    $('launcherStatus').textContent = '';
-    $('projectGrid').innerHTML = projects.map(project => `<article class="project-card" data-id="${escapeHtml(project.id)}"><button class="project-card-main" data-action="open" aria-label="Abrir ${escapeHtml(project.name)}"><span class="project-heading"><span class="project-symbol" aria-hidden="true">⌂</span><h2>${escapeHtml(project.name)}</h2><span class="project-arrow" aria-hidden="true">›</span></span><p class="project-reference"><span aria-hidden="true">⌖</span>${escapeHtml(project.reference?.name || 'Sem ponto de referência')}</p><span class="project-stats"><span><b>${project.propertyCount}</b> imóveis</span><span><b>${project.favoriteCount}</b> favoritos</span><span><b>${project.noteCount}</b> anotações</span></span></button><div class="project-card-footer"><button class="text-button" data-action="edit">Configurar</button><button class="text-button" data-action="duplicate">Duplicar</button><button class="text-button open-project" data-action="open">Abrir projeto ↗</button></div></article>`).join('');
+    showDeletionNotice();
+    $('projectGrid').innerHTML = projects.map(project => `<article class="project-card" data-id="${escapeHtml(project.id)}"><button class="project-card-main" data-action="open" aria-label="Abrir ${escapeHtml(project.name)}"><span class="project-heading"><span class="project-symbol" aria-hidden="true">⌂</span><h2>${escapeHtml(project.name)}</h2><span class="project-arrow" aria-hidden="true">›</span></span><p class="project-reference"><span aria-hidden="true">⌖</span>${escapeHtml(project.reference?.name || 'Sem ponto de referência')}</p><span class="project-stats"><span><b>${project.propertyCount}</b> imóveis</span><span><b>${project.favoriteCount}</b> favoritos</span><span><b>${project.noteCount}</b> anotações</span></span></button><div class="project-card-footer"><button class="text-button" data-action="edit">Configurar</button><button class="text-button" data-action="duplicate">Duplicar</button><button class="text-button delete-project" data-action="delete">Excluir</button><button class="text-button open-project" data-action="open">Abrir projeto ↗</button></div></article>`).join('');
   } catch (error) { $('launcherStatus').textContent = `Não foi possível conectar ao serviço local do Morada. O desktop precisa dele para funcionar. Tente abrir novamente. Detalhe: ${error.message}`; }
 }
 function point() { return [Number($('referenceLat').value), Number($('referenceLng').value)]; }
@@ -143,6 +161,14 @@ $('projectGrid').addEventListener('click', async event => {
   const project = projects.find(project => project.id === action.closest('[data-id]').dataset.id);
   if (action.dataset.action === 'edit') return openForm(project);
   if (action.dataset.action === 'duplicate') return openForm(project, true);
+  if (action.dataset.action === 'delete') {
+    deletingProject = project;
+    $('deleteProjectName').textContent = project.name;
+    $('deleteProjectStatus').textContent = '';
+    $('deleteProjectDialog').showModal();
+    $('cancelDeleteProject').focus();
+    return;
+  }
   if (action.dataset.action === 'open') {
     try {
       if (window.__TAURI__) await window.__TAURI__.core.invoke('open_project', { id: project.id, name: project.name });
@@ -150,5 +176,23 @@ $('projectGrid').addEventListener('click', async event => {
     } catch (error) { $('launcherStatus').textContent = `Não foi possível abrir o projeto: ${error}`; }
   }
 });
-window.addEventListener('focus', () => { if (!$('projectDialog').open) load(); });
+$('cancelDeleteProject').addEventListener('click', () => $('deleteProjectDialog').close());
+$('deleteProjectDialog').addEventListener('cancel', event => { if (deletePending) event.preventDefault(); });
+$('confirmDeleteProject').addEventListener('click', async () => {
+  if (deletePending || !deletingProject) return;
+  deletePending = true;
+  $('confirmDeleteProject').disabled = $('cancelDeleteProject').disabled = true;
+  try {
+    const result = await request(`/api/projetos/${deletingProject.id}`, { name: deletingProject.name }, 'DELETE');
+    lastDeleted = { token: result.token, name: result.project.name };
+    if (window.__TAURI__) {
+      try { await window.__TAURI__.core.invoke('close_project', { id: deletingProject.id }); }
+      catch { /* A exclusão e o desfazer continuam disponíveis se a janela já fechou. */ }
+    }
+    $('deleteProjectDialog').close();
+    await load();
+  } catch (error) { $('deleteProjectStatus').textContent = error.message; }
+  finally { deletePending = false; $('confirmDeleteProject').disabled = $('cancelDeleteProject').disabled = false; }
+});
+window.addEventListener('focus', () => { if (!$('projectDialog').open && !$('deleteProjectDialog').open) load(); });
 load();
