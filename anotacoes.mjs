@@ -2,14 +2,13 @@ import { readFile, writeFile, rename, unlink } from 'node:fs/promises';
 import { adquirirTrava } from './arquivo-lock.mjs';
 import { validateNotes } from './src/notes.mjs';
 
-const defaultFile = new URL('./imoveis.json', import.meta.url);
 export function extrairAnotacoes(properties) {
   return validateNotes(Object.fromEntries(properties.filter(property => property.note?.text?.trim()).map(property => [String(property.id), property.note])));
 }
-export async function lerAnotacoes(file = defaultFile) {
+export async function lerAnotacoes(file) {
   return extrairAnotacoes(JSON.parse(await readFile(file, 'utf8')));
 }
-export async function salvarAnotacoes(changes, file = defaultFile) {
+export async function salvarAnotacoes(changes, file) {
   if (!changes || typeof changes !== 'object' || Array.isArray(changes)) throw new Error('Anotações inválidas');
   const notes = validateNotes(Object.fromEntries(Object.entries(changes).filter(([, note]) => note !== null)));
   const release = adquirirTrava(new URL(`${file.href}.lock`));

@@ -3,7 +3,6 @@ import { adquirirTrava } from './arquivo-lock.mjs';
 import { arquivoDados } from './dados-projeto.mjs';
 
 export const STATUS_INTERVAL_MS = 60_000;
-const defaultFile = arquivoDados('imoveis.json');
 const timestamp = value => typeof value === 'number' ? value : Date.parse(value) || 0;
 
 export async function consultarStatusAnuncio(id, previous = null, fetcher = fetch) {
@@ -27,7 +26,7 @@ export async function consultarStatusAnuncio(id, previous = null, fetcher = fetc
   }
 }
 
-export async function atualizarStatusAnuncios({ file = defaultFile, force = false, fetcher = fetch, onResult = () => {} } = {}) {
+export async function atualizarStatusAnuncios({ file = arquivoDados('imoveis.json'), force = false, fetcher = fetch, onResult = () => {} } = {}) {
   const properties = JSON.parse(await readFile(file, 'utf8'));
   if (!Array.isArray(properties)) throw new Error('imoveis.json precisa conter uma lista');
   const queue = properties.filter(property => property.origem !== 'viva-real' && /^\d{7,12}$/.test(String(property.id)) &&

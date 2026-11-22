@@ -90,7 +90,7 @@ const server = Bun.serve({
       } catch (error) { return Response.json({ error: error.message }, { status: error.code === 'ENOENT' ? 404 : 400 }); }
     }
     let projectId;
-    let dataFile = new URL('./imoveis.json', import.meta.url);
+    let dataFile;
     const scoped = /^\/projetos\/([^/]+)(\/.*)?$/.exec(pathname);
     if (scoped) {
       projectId = scoped[1];
@@ -99,6 +99,8 @@ const server = Bun.serve({
       if (!scoped[2]) return Response.redirect(new URL(`${pathname}/`, request.url), 302);
       pathname = scoped[2];
     }
+    if (!projectId && ['/', '/index.html'].includes(pathname)) return Response.redirect(new URL('/launcher.html', request.url), 302);
+    if (!projectId && ['/api/arquivamento', '/api/anotacoes', '/api/anuncios'].includes(pathname)) return Response.json({ error: 'Abra um projeto para acessar seus dados.' }, { status: 404 });
     if (pathname === '/api/arquivamento') {
       if (request.method !== 'PUT') return new Response(null, { status: 405 });
       if (!permittedWrite(request)) return new Response('Forbidden', { status: 403 });
@@ -129,7 +131,7 @@ const server = Bun.serve({
       return new Response(Bun.file(await projects.arquivo(projectId, pathname.slice(1))), { headers: jsonHeaders });
     }
     // Somente assets públicos: nunca disponibiliza os diretórios de outros projetos.
-    if (!/^\/(?:|index\.html|launcher\.html|(?:style|theme|launcher|ui)\.css|(?:imoveis|imoveis\.exemplo|favoritos|metro|estabelecimentos-locais)\.json|sao-paulo\.pmtiles|src\/[a-z0-9-]+\.mjs|assets\/[a-z0-9-]+\.(?:svg|png))$/.test(pathname)) return new Response('Not found', { status: 404 });
+    if (!/^\/(?:|index\.html|launcher\.html|(?:style|theme|launcher|ui)\.css|(?:metro|estabelecimentos-locais)\.json|sao-paulo\.pmtiles|src\/[a-z0-9-]+\.mjs|assets\/[a-z0-9-]+\.(?:svg|png))$/.test(pathname)) return new Response('Not found', { status: 404 });
     const path = resolve(root, `.${pathname === '/' ? '/index.html' : pathname}`);
     if (!path.startsWith(root + sep) || pathname.split('/').some(part => part.startsWith('.'))) {
       return new Response('Forbidden', { status: 403 });

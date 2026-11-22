@@ -9,7 +9,7 @@ import { criarRepositorioProjetos } from '../projetos.mjs';
 test('Backup restaura todos os dados em outro ID e rejeita arquivos inválidos sem criar projetos parciais', async () => {
   const temp = await mkdtemp(join(tmpdir(), 'morada-project-backup-'));
   const legacyDirectory = pathToFileURL(temp + '/');
-  const repo = criarRepositorioProjetos({ directory: new URL('projetos/', legacyDirectory), legacyDirectory });
+  const repo = criarRepositorioProjetos({ directory: new URL('projetos/', legacyDirectory) });
   const properties = [{ id: 894723967, origem: 'quinto-andar', lat: -23.55, lng: -46.65,
     images: [{ url: 'https://example.com/foto.jpg' }], video: { hasVideo: true, items: [{ provider: 'VIMEO', sourceId: '12345' }] },
     note: { text: 'Texto original\ncom espaços e acentuação. ', updatedAt: '2026-11-17T04:08:30.981Z' },
@@ -18,10 +18,11 @@ test('Backup restaura todos os dados em outro ID e rejeita arquivos inválidos s
     walkability: { score: 35, radius: 300, categories: { market: { count: 1, nearest: 12, grade: 100 } } },
     futureField: { preserve: true } }];
   try {
-    await writeFile(new URL('imoveis.json', legacyDirectory), JSON.stringify(properties));
-    await writeFile(new URL('favoritos.json', legacyDirectory), '["894723967"]');
     await repo.inicializar();
-    const [source] = await repo.listar();
+    assert.deepEqual(await repo.listar(), []);
+    const source = await repo.criar({ name: 'Backup de teste' });
+    await writeFile(await repo.arquivo(source.id, 'imoveis.json'), JSON.stringify(properties));
+    await writeFile(await repo.arquivo(source.id, 'favoritos.json'), '["894723967"]');
     const configFile = await repo.arquivo(source.id, 'projeto.json');
     const config = JSON.parse(await readFile(configFile, 'utf8'));
     config.preferences = { custom: 'preservar' };

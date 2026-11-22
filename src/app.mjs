@@ -16,8 +16,8 @@ const state = {
   favorites: new Set(),
 };
 let map, propertyLayer, poiLayer, metroLayer, radiusLayer, metroRenderer;
-let referencePoint = [-23.556866, -46.661231];
-let reference = { name: 'Trabalho · Paulista, 2300', address: 'Av. Paulista, 2300 — 19º andar, conj. 192 · São Paulo - SP' };
+let referencePoint = null;
+let reference = null;
 let baseMapLayer;
 function updateBaseMapTheme() {
   if (!map || !window.protomapsL) return;
@@ -578,9 +578,7 @@ function loadData(json, sourceLabel = 'arquivo') {
   }
   state.selected = null;
   state.version++;
-  const demo = properties.length > 0 && properties.every(p => p.demo);
-  if (demo) showNotice('Exibindo imóveis fictícios de demonstração. Para usar seus imóveis, importe imoveis.json ou coloque o arquivo na pasta do projeto.');
-  else showNotice(sourceLabel === 'arquivo importado' ? `${properties.length} imóveis carregados do JSON importado.` : '');
+  showNotice(sourceLabel === 'arquivo importado' ? `${properties.length} imóveis carregados do JSON importado.` : '');
   renderCards();
   if (map) {
     propertyLayer.clearLayers();poiLayer.clearLayers();metroLayer.clearLayers();radiusLayer.clearLayers();
@@ -594,12 +592,13 @@ function loadData(json, sourceLabel = 'arquivo') {
   } else {
     if (location.pathname.startsWith('/projetos/')) map?.setView(referencePoint || [-23.55, -46.64], referencePoint ? 14 : 12, { animate: false });
     $('selectedTitle').textContent = 'Nenhum imóvel carregado';
-    $('selectedSubtitle').textContent = 'Importe um JSON para começar.';
+    $('selectedSubtitle').textContent = 'Adicione imóveis a este projeto para começar.';
     setStatus(location.pathname.startsWith('/projetos/') ? 'Projeto vazio · Use Projeto → Adicionar imóvel para começar' : 'Nenhum imóvel carregado');
     scoreStatus(null);
   }
 }
 async function start() {
+  if (!location.pathname.startsWith('/projetos/')) { location.replace('/launcher.html'); return; }
   if (location.pathname.startsWith('/projetos/')) {
     try {
       const response = await fetch('./projeto.json', { cache: 'no-store' });
@@ -658,19 +657,8 @@ async function start() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     loadData(await response.json(), 'imoveis.json');
   } catch (error) {
-    if (location.pathname.startsWith('/projetos/')) {
-      loadData([], 'vazio');
-      showNotice(`Não foi possível ler os imóveis deste projeto: ${error.message}. Os dados não foram alterados.`, true);
-      return;
-    }
-    try {
-      const response = await fetch('./imoveis.exemplo.json', { cache: 'no-store' });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      loadData(await response.json(), 'demonstração');
-    } catch (_) {
-      showNotice('Não foi possível abrir os arquivos locais automaticamente. Execute um servidor HTTP (veja README.md) ou importe seu JSON pelo botão acima.', true);
-      loadData([], 'vazio');
-    }
+    loadData([], 'vazio');
+    showNotice(`Não foi possível ler os imóveis deste projeto: ${error.message}. Os dados não foram alterados.`, true);
   }
 }
 async function loadMetroNetwork() {

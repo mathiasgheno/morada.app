@@ -19,3 +19,7 @@ src-tauri/target/
 src-tauri/gen/
 desktop-dist/
 projetos/
+
+# Dados antigos não devem voltar a ser versionados na raiz.
+/imoveis.json
+/favoritos.json

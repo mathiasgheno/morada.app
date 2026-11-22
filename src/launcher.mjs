@@ -101,7 +101,7 @@ function openForm(project, duplicate = false) {
   $('projectForm').reset();
   $('useReference').checked = Boolean(project?.reference);
   toggleReferenceFields();
-  const reference = project?.reference || { name: 'Meu ponto de referência', address: 'Av. Paulista, 2300 · São Paulo', lat: -23.556866, lng: -46.661231 };
+  const reference = project?.reference || { name: 'Meu ponto de referência', address: '', lat: -23.55052, lng: -46.633308 };
   $('projectNameInput').value = project ? `${project.name}${duplicate ? ' — cópia' : ''}`.slice(0, 120) : '';
   $('referenceName').value = reference.name;
   $('referenceAddress').value = reference.address;

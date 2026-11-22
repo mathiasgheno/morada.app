@@ -4,21 +4,27 @@ import { mkdtemp, writeFile, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { criarRepositorioProjetos, DEFAULT_REFERENCE, validarIdProjeto } from '../projetos.mjs';
+import { criarRepositorioProjetos, validarIdProjeto } from '../projetos.mjs';
 import { salvarAnotacoes } from '../anotacoes.mjs';
 import { adquirirTrava } from '../arquivo-lock.mjs';
+const DEFAULT_REFERENCE = { name: 'Referência de teste', address: 'São Paulo', lat: -23.55, lng: -46.65 };
 
-test('Projetos copiam o legado uma vez, isolam cópias e compartilham apenas os assets', async () => {
+test('Inicialização ignora dados da raiz; projetos criados isolam cópias e compartilham apenas os assets', async () => {
   const temp = await mkdtemp(join(tmpdir(), 'morada-projects-'));
   const legacyDirectory = pathToFileURL(temp + '/');
   const directory = new URL('projetos/', legacyDirectory);
-  const repository = criarRepositorioProjetos({ directory, legacyDirectory });
+  const repository = criarRepositorioProjetos({ directory });
   const note = { text: 'Original', updatedAt: '2026-11-16T03:12:36.595Z' };
   const original = JSON.stringify([{ id: 894723967, note, statusAnuncio: { status: 'active' } }]);
   try {
     await writeFile(new URL('imoveis.json', legacyDirectory), original);
     await writeFile(new URL('favoritos.json', legacyDirectory), '["894723967"]');
     await repository.inicializar();
+    assert.deepEqual(await repository.listar(), []);
+    assert.deepEqual(await readdir(directory), []);
+    const created = await repository.criar({ name: 'Projeto de teste', reference: DEFAULT_REFERENCE });
+    await writeFile(await repository.arquivo(created.id, 'imoveis.json'), original);
+    await writeFile(await repository.arquivo(created.id, 'favoritos.json'), '["894723967"]');
     const [initial] = await repository.listar();
     assert.equal(initial.propertyCount, 1);
     assert.equal(initial.noteCount, 1);
