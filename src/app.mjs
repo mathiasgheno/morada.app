@@ -504,6 +504,13 @@ function clearPropertySelection() {
   setStatus('Selecione um imóvel para explorar a região');
 }
 $('clearSelection').addEventListener('click', clearPropertySelection);
+$('officialLink').addEventListener('click', async event => {
+  if (!window.__TAURI__) return;
+  event.preventDefault();
+  const url = event.currentTarget.href;
+  try { await window.__TAURI__.core.invoke('open_walk_score', { url }); }
+  catch (error) { showNotice(`Não foi possível abrir o Walk Score no navegador: ${error}`, true); }
+});
 $('toggleNearby').addEventListener('click', () => {
   if (!state.selected) return;
   state.nearbyVisible = !state.nearbyVisible;

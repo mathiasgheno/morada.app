@@ -177,6 +177,8 @@ Imóveis sem coordenadas ainda aparecem na lista, mas não podem ter índice cal
 
 ### Índice de caminhabilidade: não é o Walk Score oficial
 
+“Consultar Walk Score” abre o link externo no navegador padrão do sistema pelo Tauri. Na versão web, mantém a abertura normal em nova aba. Essa ação apenas consulta o site externo; o índice calculado localmente continua independente.
+
 O índice é uma aproximação independente com dados públicos do OSM, calculada automaticamente:
 
 | Categoria | Peso |

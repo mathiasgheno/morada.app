@@ -5,6 +5,16 @@ use tauri::menu::{AboutMetadata, CheckMenuItem, Menu, MenuItem, PredefinedMenuIt
 use std::sync::Mutex;
 use std::io::Write;
 use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_opener::OpenerExt;
+
+#[tauri::command]
+async fn open_walk_score(app: tauri::AppHandle, url: String) -> Result<(), String> {
+    let parsed = tauri::Url::parse(&url).map_err(|_| "Link do Walk Score inválido")?;
+    if parsed.scheme() != "https" || !matches!(parsed.host_str(), Some("www.walkscore.com" | "walkscore.com")) || !parsed.username().is_empty() || parsed.password().is_some() {
+        return Err("Link do Walk Score inválido".into());
+    }
+    app.opener().open_url(parsed.as_str(), None::<&str>).map_err(|e| e.to_string())
+}
 
 struct ExportProjectItem(MenuItem<tauri::Wry>);
 
@@ -126,8 +136,9 @@ async fn close_project(app: tauri::AppHandle, window: tauri::WebviewWindow, id: 
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::Builder::new().open_js_links_on_click(false).build())
         .manage(Mutex::new(String::from("main")))
-        .invoke_handler(tauri::generate_handler![open_project, close_project, set_theme_mode, save_project_backup])
+        .invoke_handler(tauri::generate_handler![open_project, close_project, set_theme_mode, save_project_backup, open_walk_score])
         .setup(|app| {
             // Mantém os menus nativos de edição e gerenciamento das janelas.
             let menu = Menu::default(app.handle())?;
