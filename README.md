@@ -34,7 +34,7 @@ bun run update:estabelecimentos --project ID
 bun run update:caminhabilidade --project ID
 ```
 
-O gerador antigo com IDs pessoais fixos foi removido. Os arquivos legados saíram da versão atual em commits normais; o histórico Git permanece intacto.
+O gerador antigo com IDs pessoais fixos foi removido. Os arquivos pessoais legados (`imoveis.json`, `favoritos.json`, `imoveis-erros.json` e o gerador com IDs fixos) foram removidos também do histórico das branches locais, após validação da reimportação. O histórico de evolução do código foi preservado.
 
 O servidor HTTP local é único e escuta apenas em `127.0.0.1`. O launcher exibe erro de conexão caso não consiga acessar o serviço. A distribuição independente e a escolha automática de porta ainda não fazem parte deste protótipo.
 
