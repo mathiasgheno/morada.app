@@ -17,6 +17,8 @@
   <main class="launcher-main">
     <section aria-labelledby="projectsTitle"><div class="section-heading"><h1 id="projectsTitle">Meus projetos <span id="projectTotal" class="project-total">–</span></h1></div><p id="launcherStatus" role="status">Carregando seus projetos…</p><div id="projectGrid" class="project-grid"></div></section>
     <button id="newProject" class="primary-button new-project-button" type="button"><span aria-hidden="true">＋</span> Novo projeto</button>
+    <button id="importProjectButton" class="secondary-button import-project-button" type="button">Importar projeto</button><input id="importProjectFile" type="file" accept=".json,application/json" hidden>
+    <p id="projectTransferStatus" class="field-help" role="status"></p>
   </main>
   <dialog id="projectDialog" aria-labelledby="projectDialogTitle">
     <form id="projectForm"><div class="dialog-heading"><h2 id="projectDialogTitle">Novo projeto</h2><button id="closeProjectDialog" class="icon-button" type="button" aria-label="Fechar">✕</button></div>

@@ -1,3 +1,5 @@
+import { exportProject, MAX_PROJECT_BACKUP_BYTES } from './project-transfer.mjs';
+
 const $ = id => document.getElementById(id);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 let projects = [];
@@ -83,7 +85,7 @@ async function load() {
     projects = await request('/api/projetos');
     $('projectTotal').textContent = projects.length;
     showDeletionNotice();
-    $('projectGrid').innerHTML = projects.map(project => `<article class="project-card" data-id="${escapeHtml(project.id)}"><button class="project-card-main" data-action="open" aria-label="Abrir ${escapeHtml(project.name)}"><span class="project-heading"><span class="project-symbol" aria-hidden="true">⌂</span><h2>${escapeHtml(project.name)}</h2><span class="project-arrow" aria-hidden="true">›</span></span><p class="project-reference"><span aria-hidden="true">⌖</span>${escapeHtml(project.reference?.name || 'Sem ponto de referência')}</p><span class="project-stats"><span><b>${project.propertyCount}</b> imóveis</span><span><b>${project.favoriteCount}</b> favoritos</span><span><b>${project.noteCount}</b> anotações</span></span></button><div class="project-card-footer"><button class="text-button" data-action="edit">Configurar</button><button class="text-button" data-action="duplicate">Duplicar</button><button class="text-button delete-project" data-action="delete">Excluir</button><button class="text-button open-project" data-action="open">Abrir projeto ↗</button></div></article>`).join('');
+    $('projectGrid').innerHTML = projects.map(project => `<article class="project-card" data-id="${escapeHtml(project.id)}"><button class="project-card-main" data-action="open" aria-label="Abrir ${escapeHtml(project.name)}"><span class="project-heading"><span class="project-symbol" aria-hidden="true">⌂</span><h2>${escapeHtml(project.name)}</h2><span class="project-arrow" aria-hidden="true">›</span></span><p class="project-reference"><span aria-hidden="true">⌖</span>${escapeHtml(project.reference?.name || 'Sem ponto de referência')}</p><span class="project-stats"><span><b>${project.propertyCount}</b> imóveis</span><span><b>${project.favoriteCount}</b> favoritos</span><span><b>${project.noteCount}</b> anotações</span></span></button><div class="project-card-footer"><button class="text-button" data-action="edit">Configurar</button><button class="text-button" data-action="duplicate">Duplicar</button><button class="text-button" data-action="export">Exportar</button><button class="text-button delete-project" data-action="delete">Excluir</button><button class="text-button open-project" data-action="open">Abrir projeto ↗</button></div></article>`).join('');
   } catch (error) { $('launcherStatus').textContent = `Não foi possível conectar ao serviço local do Morada. O desktop precisa dele para funcionar. Tente abrir novamente. Detalhe: ${error.message}`; }
 }
 function point() { return [Number($('referenceLat').value), Number($('referenceLng').value)]; }
@@ -113,6 +115,21 @@ function openForm(project, duplicate = false) {
   $('projectNameInput').focus();
 }
 $('newProject').addEventListener('click', () => openForm());
+$('importProjectButton').addEventListener('click', () => $('importProjectFile').click());
+$('importProjectFile').addEventListener('change', async event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  $('importProjectButton').disabled = true;
+  $('projectTransferStatus').textContent = 'Importando projeto…';
+  try {
+    if (file.size > MAX_PROJECT_BACKUP_BYTES) throw new Error('Arquivo maior que 50 MB.');
+    const backup = JSON.parse(await file.text());
+    const project = await request('/api/projetos/importar', backup);
+    await load();
+    $('projectTransferStatus').textContent = `Projeto “${project.name}” importado como um novo projeto.`;
+  } catch (error) { $('projectTransferStatus').textContent = `Não foi possível importar: ${error.message}`; }
+  finally { $('importProjectButton').disabled = false; event.target.value = ''; }
+});
 function toggleReferenceFields() {
   cancelAddressLookup();
   $('referenceFields').hidden = !$('useReference').checked;
@@ -161,6 +178,16 @@ $('projectGrid').addEventListener('click', async event => {
   const project = projects.find(project => project.id === action.closest('[data-id]').dataset.id);
   if (action.dataset.action === 'edit') return openForm(project);
   if (action.dataset.action === 'duplicate') return openForm(project, true);
+  if (action.dataset.action === 'export') {
+    action.disabled = true;
+    $('projectTransferStatus').textContent = 'Preparando exportação…';
+    try {
+      const saved = await exportProject(project.id);
+      $('projectTransferStatus').textContent = saved ? `Projeto “${project.name}” exportado.` : 'Exportação cancelada.';
+    } catch (error) { $('projectTransferStatus').textContent = `Não foi possível exportar: ${error.message}`; }
+    finally { action.disabled = false; }
+    return;
+  }
   if (action.dataset.action === 'delete') {
     deletingProject = project;
     $('deleteProjectName').textContent = project.name;

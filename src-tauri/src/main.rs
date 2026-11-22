@@ -3,6 +3,35 @@
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri::menu::{AboutMetadata, CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use std::sync::Mutex;
+use std::io::Write;
+use tauri_plugin_dialog::DialogExt;
+
+struct ExportProjectItem(MenuItem<tauri::Wry>);
+
+#[tauri::command]
+async fn save_project_backup(app: tauri::AppHandle, contents: String, filename: String) -> Result<Option<String>, String> {
+    if contents.len() > 50_000_000 || filename.len() > 160 || filename.contains('/') || filename.contains('\\') || !filename.ends_with(".json") {
+        return Err("Arquivo de projeto inválido ou maior que 50 MB.".into());
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        let selected = app.dialog().file().set_title("Exportar projeto").add_filter("Projeto Morada", &["json"]).set_file_name(&filename).blocking_save_file();
+        let Some(selected) = selected else { return Ok(None); };
+        let path = selected.into_path().map_err(|e| e.to_string())?;
+        let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?.as_nanos();
+        let temporary = path.with_file_name(format!(".morada-export-{}-{}.tmp", std::process::id(), nonce));
+        let saved = (|| -> Result<(), std::io::Error> {
+            let mut file = std::fs::OpenOptions::new().write(true).create_new(true).open(&temporary)?;
+            file.write_all(contents.as_bytes())?;
+            file.sync_all()?;
+            std::fs::rename(&temporary, &path)
+        })();
+        if let Err(error) = saved {
+            let _ = std::fs::remove_file(&temporary);
+            return Err(error.to_string());
+        }
+        Ok(Some(path.to_string_lossy().into_owned()))
+    }).await.map_err(|e| e.to_string())?
+}
 
 struct ThemeMenu {
     light: CheckMenuItem<tauri::Wry>,
@@ -38,6 +67,9 @@ fn update_active_window(app: &tauri::AppHandle, label: &str) {
     // Mantém o próprio item: Menu::get não procura dentro de submenus.
     if let Some(item) = app.try_state::<MenuItem<tauri::Wry>>() {
         let _ = item.set_enabled(label.starts_with("project-"));
+    }
+    if let Some(item) = app.try_state::<ExportProjectItem>() {
+        let _ = item.0.set_enabled(label.starts_with("project-"));
     }
 }
 
@@ -93,8 +125,9 @@ async fn close_project(app: tauri::AppHandle, window: tauri::WebviewWindow, id: 
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(Mutex::new(String::from("main")))
-        .invoke_handler(tauri::generate_handler![open_project, close_project, set_theme_mode])
+        .invoke_handler(tauri::generate_handler![open_project, close_project, set_theme_mode, save_project_backup])
         .setup(|app| {
             // Mantém os menus nativos de edição e gerenciamento das janelas.
             let menu = Menu::default(app.handle())?;
@@ -143,6 +176,21 @@ fn main() {
                 menu.insert(&view, menu.items()?.len().saturating_sub(2))?;
             }
             app.manage(theme_menu);
+            let export_project = MenuItem::with_id(app, "export-project", "Exportar projeto…", false, Some("CmdOrCtrl+Shift+E"))?;
+            let mut file_menu = None;
+            for item in menu.items()? {
+                if let Some(submenu) = item.as_submenu() {
+                    if submenu.text()? == "File" { file_menu = Some(submenu.clone()); break; }
+                }
+            }
+            if let Some(file) = file_menu {
+                file.append(&PredefinedMenuItem::separator(app)?)?;
+                file.append(&export_project)?;
+            } else {
+                let file = Submenu::with_items(app, "File", true, &[&export_project])?;
+                menu.insert(&file, 0)?;
+            }
+            app.manage(ExportProjectItem(export_project));
             app.set_menu(menu)?;
             app.manage(add_property);
             Ok(())
@@ -153,6 +201,14 @@ fn main() {
             }
         })
         .on_menu_event(|app, event| {
+            if event.id().as_ref() == "export-project" {
+                let label = app.state::<Mutex<String>>().lock().ok().map(|label| label.clone());
+                if let Some(label) = label.filter(|label| label.starts_with("project-")) {
+                    if let Some(window) = app.get_webview_window(&label) {
+                        let _ = window.eval("window.__moradaExportRequested = true; window.dispatchEvent(new Event('morada:export-project'));");
+                    }
+                }
+            }
             if let Some(mode) = event.id().as_ref().strip_prefix("theme-") {
                 if update_theme_menu(app, mode).is_ok() {
                     for window in app.webview_windows().values() {

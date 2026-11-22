@@ -95,6 +95,7 @@ export function initNotes({ onChange, getProperty }) {
     event.target.value = '';
   });
   return {
+    flush: async () => (await save()) && !dirty,
     load(properties) {
       notes = validateNotes(Object.fromEntries(properties.filter(property => property.raw.note).map(property => [property.id, property.raw.note])));
     },

@@ -1,7 +1,7 @@
 import { resolve, sep } from 'node:path';
 import { verificarAnuncios } from './anuncios';
 import { lerAnotacoes, salvarAnotacoes } from './anotacoes.mjs';
-import { criarRepositorioProjetos } from './projetos.mjs';
+import { criarRepositorioProjetos, MAX_PROJECT_BACKUP_BYTES } from './projetos.mjs';
 import { criarConsultaEnderecos } from './enderecos.mjs';
 import { definirArquivamento } from './arquivamento.mjs';
 
@@ -13,15 +13,17 @@ const jsonHeaders = { 'Cache-Control': 'no-store' };
 function permittedWrite(request) {
   return request.headers.get('origin') === new URL(request.url).origin && request.headers.get('content-type')?.startsWith('application/json');
 }
-async function bodyJSON(request) {
+async function bodyJSON(request, limit = 5_000_000) {
+  if (Number(request.headers.get('content-length')) > limit) throw new Error(`Arquivo maior que ${limit / 1_000_000} MB`);
   const body = await request.text();
-  if (body.length > 5_000_000) throw new Error('Arquivo maior que 5 MB');
+  if (Buffer.byteLength(body) > limit) throw new Error(`Arquivo maior que ${limit / 1_000_000} MB`);
   return JSON.parse(body);
 }
 const server = Bun.serve({
   port: Number(process.env.PORT || 8000),
   hostname: '127.0.0.1',
   idleTimeout: 180,
+  maxRequestBodySize: MAX_PROJECT_BACKUP_BYTES,
   async fetch(request) {
     let pathname;
     try { pathname = decodeURIComponent(new URL(request.url).pathname); }
@@ -32,6 +34,22 @@ const server = Bun.serve({
       if (!parameters.get('lat') || !parameters.get('lng')) return Response.json({ error: 'Informe latitude e longitude.' }, { status: 400 });
       try { return Response.json(await consultarEndereco(Number(parameters.get('lat')), Number(parameters.get('lng'))), { headers: jsonHeaders }); }
       catch (error) { return Response.json({ error: error.message }, { status: 400, headers: jsonHeaders }); }
+    }
+    if (pathname === '/api/projetos/importar' && request.method === 'POST') {
+      if (!permittedWrite(request)) return new Response('Forbidden', { status: 403 });
+      try { return Response.json(await projects.importar(await bodyJSON(request, MAX_PROJECT_BACKUP_BYTES)), { status: 201, headers: jsonHeaders }); }
+      catch (error) { return Response.json({ error: error.message }, { status: 400, headers: jsonHeaders }); }
+    }
+    const exportRoute = /^\/api\/projetos\/([a-z0-9-]+)\/exportar$/.exec(pathname);
+    if (exportRoute) {
+      if (request.method !== 'GET') return new Response(null, { status: 405 });
+      try {
+        const backup = await projects.exportar(exportRoute[1]);
+        const slug = backup.project.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'projeto';
+        const contents = JSON.stringify(backup, null, 2) + '\n';
+        if (Buffer.byteLength(contents) > MAX_PROJECT_BACKUP_BYTES) throw new Error('Projeto maior que 50 MB.');
+        return new Response(contents, { headers: { ...jsonHeaders, 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="${slug}.morada.json"` } });
+      } catch (error) { return Response.json({ error: error.message }, { status: 400, headers: jsonHeaders }); }
     }
     if (pathname === '/api/projetos/restaurar' && request.method === 'POST') {
       if (!permittedWrite(request)) return new Response('Forbidden', { status: 403 });

@@ -10,6 +10,10 @@ A ordenação oferece maior e menor caminhabilidade, mantendo índices indispon�
 
 ## Projetos e launcher
 
+O launcher oferece “Importar projeto” fora da lista e “Exportar” em cada card. Nas janelas de projeto, `File → Exportar projeto…` (`Cmd/Ctrl+Shift+E`) exporta o projeto ativo; anotações ainda em edição são salvas antes da exportação. No desktop, o diálogo nativo permite escolher o destino. Na web, o navegador baixa o arquivo.
+
+O formato `.morada.json` tem `type: "morada-project"` e `version: 1`. Ele reúne a configuração do projeto, referência opcional, imóveis completos (incluindo anotações, scores, arquivados, status, vídeos, fotos por URL e estabelecimentos já consultados) e favoritos. Campos adicionais são preservados. O mapa e as bases gerais compartilhadas não são duplicados; o backup não baixa os arquivos de mídia dos anúncios. O limite é 50 MB. A importação valida o arquivo inteiro e sempre cria um novo ID, preservando projetos existentes. Rotas: `GET /api/projetos/ID/exportar` e `POST /api/projetos/importar`.
+
 `bun run desktop:dev` abre o launcher em `/launcher.html`. “Novo projeto” cria uma busca vazia; “Duplicar” copia imóveis, favoritos e anotações para uma busca independente. “Configurar” permite alterar o nome e o ponto de referência, inclusive posicionando-o no mapa. São Paulo continua sendo a cidade fixa. No desktop, abrir um projeto cria uma janela própria; abrir o mesmo projeto novamente foca a janela existente. Fechar uma janela de projeto mantém o launcher aberto.
 
 O launcher usa uma janela vertical de 460 × 760 e mantém o logo centralizado acima da lista. “Novo projeto” também está no menu nativo `Projeto`, com `Cmd+N` no macOS e `Ctrl+N` nos demais sistemas. O menu traz o launcher para frente (ou o recria se necessário) e abre o formulário sem interromper uma edição já aberta. Os ícones PNG, ICNS e ICO são derivados de `assets/morada-symbol.svg` com `bun run tauri icon assets/morada-symbol.svg`; o Tauri usa o ICNS no Dock durante o desenvolvimento no macOS.

@@ -2,6 +2,7 @@ import { extractProperties, sortProperties, dateText, brl, availabilityColor } f
 import { CATEGORIES, RADIUS_METERS, distanceText } from './geo.mjs';
 import { localPois, propertyWalkability } from './walkability.mjs';
 import { initNotes } from './notes-ui.mjs';
+import { exportProject } from './project-transfer.mjs';
 
 const $ = id => document.getElementById(id);
 const state = {
@@ -600,6 +601,19 @@ async function start() {
       reference = project.reference || null;
       referencePoint = reference ? [reference.lat, reference.lng] : null;
       document.title = `${project.name} · Morada`;
+      let exportingProject = false;
+      async function exportCurrentProject() {
+        window.__moradaExportRequested = false;
+        if (exportingProject) return;
+        exportingProject = true;
+        try {
+          const saved = await exportProject(project.id, { beforeExport: propertyNotes.flush });
+          if (saved) showNotice('Projeto exportado com todos os dados salvos.');
+        } catch (error) { showNotice(`Não foi possível exportar: ${error.message}`, true); }
+        finally { exportingProject = false; }
+      }
+      window.addEventListener('morada:export-project', exportCurrentProject);
+      if (window.__moradaExportRequested) exportCurrentProject();
       window.addEventListener('morada:add-property', () => {
         if (!$('addPropertyDialog').open) $('addPropertyDialog').showModal();
       });
