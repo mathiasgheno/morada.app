@@ -1,5 +1,6 @@
 import { normalizeProperty } from './src/data.mjs';
 import { readFile } from 'node:fs/promises';
+import { assetFile } from './caminhos.mjs';
 import { RADIUS_METERS, poiQuery, parsePois, haversineMeters } from './src/geo.mjs';
 
 export function retryDelay(value, attempt = 0, now = Date.now()) {
@@ -17,7 +18,7 @@ export function dadosLocaisValidos(property) {
 let localDatabase;
 export async function consultarEstabelecimentos(properties) {
   if (!localDatabase) {
-    const data = JSON.parse(await readFile(new URL('./estabelecimentos-locais.json', import.meta.url), 'utf8'));
+    const data = JSON.parse(await readFile(assetFile('estabelecimentos-locais.json'), 'utf8'));
     if (!Array.isArray(data.items) || !Array.isArray(data.bounds)) throw new Error('Base local inválida');
     localDatabase = data;
   }

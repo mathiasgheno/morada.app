@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile, readdir, rename, rm } from 'node:fs/promise
 import { randomUUID } from 'node:crypto';
 import { adquirirTrava } from './arquivo-lock.mjs';
 import { validateNotes } from './src/notes.mjs';
+import { projectsDirectory } from './caminhos.mjs';
 
 export const MAX_PROJECT_BACKUP_BYTES = 50_000_000;
 function validarBackup(data) {
@@ -38,7 +39,7 @@ function validarConfiguracao(input) {
   return { name, reference: { name: reference.name.trim(), address: reference.address, lat: reference.lat, lng: reference.lng }, city: 'São Paulo', state: 'SP' };
 }
 
-export function criarRepositorioProjetos({ directory = new URL('./projetos/', import.meta.url) } = {}) {
+export function criarRepositorioProjetos({ directory = projectsDirectory } = {}) {
   const folder = id => new URL(`${validarIdProjeto(id)}/`, directory);
   async function ler(id) {
     const config = JSON.parse(await readFile(new URL('projeto.json', folder(id)), 'utf8'));

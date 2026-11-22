@@ -4,9 +4,12 @@ import { lerAnotacoes, salvarAnotacoes } from './anotacoes.mjs';
 import { criarRepositorioProjetos, MAX_PROJECT_BACKUP_BYTES } from './projetos.mjs';
 import { criarConsultaEnderecos } from './enderecos.mjs';
 import { definirArquivamento } from './arquivamento.mjs';
+import { assetRoot, dataRoot } from './caminhos.mjs';
+import { criarGerenciadorRecursos } from './recursos-desktop.mjs';
 
-const root = import.meta.dir;
+const root = assetRoot;
 const projects = criarRepositorioProjetos();
+const resources = criarGerenciadorRecursos({ assetRoot, dataRoot });
 const consultarEndereco = criarConsultaEnderecos();
 await projects.inicializar();
 const jsonHeaders = { 'Cache-Control': 'no-store' };
@@ -28,6 +31,22 @@ const server = Bun.serve({
     let pathname;
     try { pathname = decodeURIComponent(new URL(request.url).pathname); }
     catch { return new Response('URL inválida', { status: 400 }); }
+    const session = process.env.MORADA_SESSION_TOKEN;
+    if (session) {
+      const url = new URL(request.url);
+      const cookie = `morada-${session.slice(0, 12)}`;
+      if (pathname === '/launcher.html' && url.searchParams.get('session') === session) {
+        return new Response(null, { status: 302, headers: { Location: '/launcher.html', 'Set-Cookie': `${cookie}=${session}; HttpOnly; SameSite=Strict; Path=/`, 'Cache-Control': 'no-store' } });
+      }
+      if (!request.headers.get('cookie')?.split(';').some(part => part.trim() === `${cookie}=${session}`)) return new Response('Sessão local inválida.', { status: 403 });
+    }
+    if (pathname === '/api/recursos') return request.method === 'GET' ? Response.json(await resources.status(), { headers: jsonHeaders }) : new Response(null, { status: 405 });
+    if (pathname === '/api/recursos/mapa') {
+      if (request.method !== 'POST') return new Response(null, { status: 405 });
+      if (!permittedWrite(request)) return new Response('Forbidden', { status: 403 });
+      await resources.download();
+      return Response.json(await resources.status(), { status: 202, headers: jsonHeaders });
+    }
     if (pathname === '/api/endereco') {
       if (request.method !== 'GET') return new Response(null, { status: 405 });
       const parameters = new URL(request.url).searchParams;
@@ -131,12 +150,12 @@ const server = Bun.serve({
       return new Response(Bun.file(await projects.arquivo(projectId, pathname.slice(1))), { headers: jsonHeaders });
     }
     // Somente assets públicos: nunca disponibiliza os diretórios de outros projetos.
-    if (!/^\/(?:|index\.html|launcher\.html|(?:style|theme|launcher|ui)\.css|(?:metro|estabelecimentos-locais)\.json|sao-paulo\.pmtiles|src\/[a-z0-9-]+\.mjs|assets\/[a-z0-9-]+\.(?:svg|png))$/.test(pathname)) return new Response('Not found', { status: 404 });
+    if (!/^\/(?:|index\.html|launcher\.html|(?:style|theme|launcher|ui)\.css|(?:metro|estabelecimentos-locais)\.json|sao-paulo\.pmtiles|src\/[a-z0-9-]+\.mjs|assets\/[a-z0-9-]+\.(?:svg|png)|vendor\/(?:leaflet\.(?:css|js)|protomaps-leaflet\.js|images\/[a-z0-9-]+\.png))$/.test(pathname)) return new Response('Not found', { status: 404 });
     const path = resolve(root, `.${pathname === '/' ? '/index.html' : pathname}`);
     if (!path.startsWith(root + sep) || pathname.split('/').some(part => part.startsWith('.'))) {
       return new Response('Forbidden', { status: 403 });
     }
-    const file = Bun.file(path);
+    const file = Bun.file(pathname === '/sao-paulo.pmtiles' ? await resources.mapFile() : path);
     if (!(await file.exists())) return new Response('Not found', { status: 404 });
     const headers = new Headers({ 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-cache', 'Content-Type': file.type });
     const range = request.headers.get('range');
@@ -157,3 +176,11 @@ const server = Bun.serve({
 });
 
 console.log(`Morada: ${server.url}`);
+if (process.env.MORADA_DESKTOP_RUNTIME) {
+  console.log(`MORADA_READY ${server.url}`);
+  const parent = Number(process.env.MORADA_PARENT_PID);
+  if (Number.isInteger(parent) && parent > 0) setInterval(() => {
+    try { process.kill(parent, 0); }
+    catch (error) { if (error.code === 'ESRCH') { server.stop(true); process.exit(0); } }
+  }, 2000).unref();
+}

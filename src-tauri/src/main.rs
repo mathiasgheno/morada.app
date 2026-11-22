@@ -6,6 +6,8 @@ use std::sync::Mutex;
 use std::io::Write;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
+#[cfg(not(debug_assertions))]
+mod runtime;
 
 #[tauri::command]
 async fn open_walk_score(app: tauri::AppHandle, url: String) -> Result<(), String> {
@@ -87,10 +89,26 @@ fn launcher_window(app: &tauri::AppHandle, new_project: bool) -> Result<tauri::W
     if let Some(window) = app.get_webview_window("main") {
         return Ok(window);
     }
-    let mut builder = WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])
+    let config = app.config().app.windows[0].clone();
+    #[cfg(not(debug_assertions))]
+    let config = {
+        let mut config = config;
+        let runtime = app.state::<runtime::LocalRuntime>();
+        let mut url = runtime.origin.join("launcher.html").map_err(|e| e.to_string())?;
+        url.query_pairs_mut().append_pair("session", &runtime.session);
+        config.url = WebviewUrl::External(url);
+        config
+    };
+    let mut builder = WebviewWindowBuilder::from_config(app, &config)
         .map_err(|e| e.to_string())?;
     if new_project {
         builder = builder.initialization_script("window.__moradaNewProjectRequested = true;");
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        let runtime = app.state::<runtime::LocalRuntime>();
+        let origin = runtime.origin.origin();
+        builder = builder.on_navigation(move |url| url.origin() == origin);
     }
     builder
         .build()
@@ -112,7 +130,9 @@ async fn open_project(app: tauri::AppHandle, window: tauri::WebviewWindow, id: S
     url.set_path(&format!("/projetos/{}/", id));
     url.set_query(None);
     url.set_fragment(None);
+    let origin = url.origin();
     WebviewWindowBuilder::new(&app, label.clone(), WebviewUrl::External(url))
+        .on_navigation(move |url| url.origin() == origin)
         .title(format!("{} · Morada", name))
         .inner_size(1440.0, 960.0)
         .min_inner_size(900.0, 600.0)
@@ -140,6 +160,15 @@ fn main() {
         .manage(Mutex::new(String::from("main")))
         .invoke_handler(tauri::generate_handler![open_project, close_project, set_theme_mode, save_project_backup, open_walk_score])
         .setup(|app| {
+            #[cfg(not(debug_assertions))]
+            match runtime::start(app.handle()) {
+                Ok(runtime) => { app.manage(runtime); }
+                Err(error) => {
+                    app.dialog().message(error.to_string()).title("Não foi possível iniciar o Morada")
+                        .kind(tauri_plugin_dialog::MessageDialogKind::Error).blocking_show();
+                    return Err(error.into());
+                }
+            }
             // Mantém os menus nativos de edição e gerenciamento das janelas.
             let menu = Menu::default(app.handle())?;
             let about = PredefinedMenuItem::about(app, Some("About Morada"), Some(AboutMetadata {
@@ -204,6 +233,8 @@ fn main() {
             app.manage(ExportProjectItem(export_project));
             app.set_menu(menu)?;
             app.manage(add_property);
+            #[cfg(not(debug_assertions))]
+            launcher_window(app.handle(), false).map_err(std::io::Error::other)?;
             Ok(())
         })
         .on_window_event(|window, event| {

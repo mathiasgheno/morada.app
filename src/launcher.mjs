@@ -3,6 +3,32 @@ import { exportProject, MAX_PROJECT_BACKUP_BYTES } from './project-transfer.mjs'
 const $ = id => document.getElementById(id);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 let projects = [];
+let resourcesReady = true;
+let resourceTimer;
+async function loadResources() {
+  try {
+    const response = await fetch('/api/recursos', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Não foi possível conferir os arquivos do mapa.');
+    const { map } = await response.json();
+    resourcesReady = map.ready;
+    $('resourceSetup').hidden = map.ready;
+    $('downloadMap').disabled = map.status === 'downloading' || !map.downloadable;
+    $('downloadMap').textContent = map.status === 'error' ? 'Tentar baixar novamente' : 'Baixar mapa de São Paulo';
+    $('mapProgress').hidden = map.status !== 'downloading';
+    $('mapProgress').value = map.percent || 0;
+    $('mapDownloadStatus').textContent = map.error || (map.status === 'downloading' ? `Baixando mapa… ${map.percent}%` : `Download de ${Math.ceil((map.total || 0) / 1_000_000)} MB. Seus projetos não são enviados.`);
+    clearTimeout(resourceTimer);
+    if (map.status === 'downloading') resourceTimer = setTimeout(loadResources, 800);
+  } catch (error) { $('launcherStatus').textContent = error.message; }
+}
+$('downloadMap').addEventListener('click', async () => {
+  $('downloadMap').disabled = true;
+  try {
+    const response = await fetch('/api/recursos/mapa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    if (!response.ok) throw new Error('Não foi possível iniciar o download.');
+    await loadResources();
+  } catch (error) { $('mapDownloadStatus').textContent = error.message; $('downloadMap').disabled = false; }
+});
 let deletingProject = null;
 let deletePending = false;
 let lastDeleted = null;
@@ -198,6 +224,8 @@ $('projectGrid').addEventListener('click', async event => {
   }
   if (action.dataset.action === 'open') {
     try {
+      await loadResources();
+      if (!resourcesReady) { $('mapDownloadStatus').textContent = 'Baixe o mapa para abrir este projeto.'; $('resourceSetup').scrollIntoView({ behavior: 'smooth' }); return; }
       if (window.__TAURI__) await window.__TAURI__.core.invoke('open_project', { id: project.id, name: project.name });
       else window.open(`/projetos/${project.id}/`, `morada-${project.id}`);
     } catch (error) { $('launcherStatus').textContent = `Não foi possível abrir o projeto: ${error}`; }
@@ -223,3 +251,4 @@ $('confirmDeleteProject').addEventListener('click', async () => {
 });
 window.addEventListener('focus', () => { if (!$('projectDialog').open && !$('deleteProjectDialog').open) load(); });
 load();
+loadResources();

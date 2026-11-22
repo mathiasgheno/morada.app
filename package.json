@@ -12,9 +12,15 @@
     "update:status": "bun atualizar-status-anuncios.mjs",
     "update:caminhabilidade": "bun atualizar-caminhabilidade.mjs",
     "update:estabelecimentos": "bun atualizar-estabelecimentos.mjs",
-    "favorito": "bun favorito.mjs"
+    "favorito": "bun favorito.mjs",
+    "desktop:build": "bun desktop/build.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.12.6"
+  },
+  "dependencies": {
+    "leaflet": "1.9.4",
+    "playwright": "^1.65.1",
+    "protomaps-leaflet": "5.0.0"
   }
 }

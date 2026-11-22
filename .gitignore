@@ -18,6 +18,8 @@ favoritos.json.tmp
 src-tauri/target/
 src-tauri/gen/
 desktop-dist/
+desktop-resources/
+src-tauri/binaries/
 projetos/
 
 # Dados antigos não devem voltar a ser versionados na raiz.

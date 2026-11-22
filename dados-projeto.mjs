@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { validarIdProjeto } from './projetos.mjs';
+import { projectsDirectory } from './caminhos.mjs';
 
 // Todos os comandos de dados exigem um projeto explícito.
 const flag = process.argv.indexOf('--project');
@@ -11,7 +12,7 @@ if (flag >= 0) {
 export function arquivoDados(name) {
   if (!['imoveis.json', 'favoritos.json'].includes(name)) throw new Error('Arquivo de dados inválido');
   if (!projectId) throw new Error('Selecione um projeto com --project ID (ou MORADA_PROJECT_ID). Consulte os IDs no launcher ou em GET /api/projetos.');
-  const directory = new URL(`./projetos/${validarIdProjeto(projectId)}/`, import.meta.url);
+  const directory = new URL(`${validarIdProjeto(projectId)}/`, projectsDirectory);
   const configFile = new URL('projeto.json', directory);
   if (!existsSync(configFile)) throw new Error(`Projeto não encontrado: ${projectId}`);
   const config = JSON.parse(readFileSync(configFile, 'utf8'));

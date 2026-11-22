@@ -1,5 +1,25 @@
 # Morada — Explorador de imóveis
 
+## Builds desktop de teste
+
+Na branch `feature/desktop-builds`, `bun run desktop:build` gera os pacotes nativos do sistema atual. Requer Bun (versão em `.bun-version`), Rust/Cargo e os pré-requisitos do Tauri. `bun install --frozen-lockfile` instala as dependências. No macOS, use `bun run desktop:build --bundles app,dmg`; os resultados ficam em `src-tauri/target/release/bundle/`. O script requer runner nativo da arquitetura escolhida, porque inclui o executável Bun correspondente.
+
+O aplicativo instalado inclui Bun, o servidor, Playwright (sem navegador), as bibliotecas da interface, metrô e a base compacta de estabelecimentos. Não inclui projetos pessoais, favoritos, notas, o mapa grande ou o PBF bruto. O VivaReal continua exigindo Google Chrome instalado; o aplicativo não baixa um navegador automaticamente. O mapa de São Paulo é baixado pelo launcher, com progresso, tamanho e SHA-256 verificados, a partir de uma revisão fixa do repositório público. Downloads incompletos não são usados; é possível tentar novamente.
+
+O servidor escuta somente em `127.0.0.1`, em porta livre, com uma sessão aleatória exclusiva do aplicativo. É iniciado pelo desktop e encerrado ao sair; o serviço também verifica se o processo pai ainda existe. Se não puder iniciar, uma mensagem nativa explica que o HTTP local é necessário e indica o log `servidor.log` na pasta de dados. O app instalado começa sem projetos: importe seu backup pelo launcher. Os dados da cópia de desenvolvimento não são migrados automaticamente.
+
+Pastas de dados do aplicativo instalado:
+
+- macOS: `~/Library/Application Support/app.morada.desktop/`;
+- Windows: `%APPDATA%\app.morada.desktop\`;
+- Linux: `$XDG_DATA_HOME/app.morada.desktop/` (normalmente `~/.local/share/app.morada.desktop/`).
+
+As pastas contêm `projetos/` e `recursos/`. O modo `desktop:dev` continua usando os projetos locais do repositório, com identidade de WebView separada (`app.morada.desktop.dev`).
+
+A pipeline `.github/workflows/desktop-builds.yml` roda nesta branch e permite builds manuais. Valida testes e gera DMGs para Apple Silicon/Intel, NSIS para Windows x64 e AppImage/DEB para Linux x64/ARM64. Os pacotes ficam como artefatos por 14 dias; não há publicação automática de release. Cada variante testa o runtime e a persistência em diretório temporário; no macOS, testa também o Bun já assinado dentro do `.app`. `bun desktop/smoke.mjs` executa essa validação após a preparação.
+
+Estes são pacotes de teste: o macOS recebe assinatura ad hoc, sem notarização Apple, e o Windows ainda não usa Authenticode. Assinatura de distribuição, atualizações automáticas e release pública serão etapas posteriores.
+
 ## Índice automático de caminhabilidade
 
 O índice é processado automaticamente ao adicionar imóveis do QuintoAndar ou VivaReal e ao atualizar seus estabelecimentos. O resultado fica em `walkability` no JSON: nota, categorias, raio de 300 m, coordenadas, origem e data dos dados utilizados. Mercados valem 35 pontos, parques 25, farmácias 20 e academias 20, pela presença de pelo menos um local da categoria em até 300 m em linha reta. Dados locais ausentes, com erro ou de outras coordenadas resultam em `null`, não zero.

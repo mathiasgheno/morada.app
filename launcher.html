@@ -5,9 +5,9 @@
   <title>Seus projetos · Morada</title>
   <script src="/src/theme.mjs"></script><link rel="stylesheet" href="/ui.css">
   <link rel="icon" href="/assets/morada-symbol.svg" type="image/svg+xml"><link rel="stylesheet" href="/launcher.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script defer src="https://unpkg.com/protomaps-leaflet@5.0.0/dist/protomaps-leaflet.js"></script>
+  <link rel="stylesheet" href="/vendor/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <script defer src="/vendor/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script defer src="/vendor/protomaps-leaflet.js"></script>
   <script type="module" src="/src/launcher.mjs"></script>
 </head>
 <body>
@@ -15,6 +15,13 @@
     <a class="brand" href="/launcher.html" aria-label="Morada — seus projetos"><img src="/assets/morada-symbol.svg" alt="" width="68" height="68"><span>morada<span class="brand-dot">.</span><small>SEU PRÓXIMO LUGAR</small></span></a>
   </header>
   <main class="launcher-main">
+    <section id="resourceSetup" class="resource-setup" hidden aria-labelledby="resourceTitle">
+      <h2 id="resourceTitle">Preparar São Paulo</h2>
+      <p>Baixe o mapa uma vez para explorar seus projetos. A base de estabelecimentos já está incluída.</p>
+      <progress id="mapProgress" max="100" value="0" aria-label="Download do mapa" hidden></progress>
+      <p id="mapDownloadStatus" role="status"></p>
+      <button id="downloadMap" type="button" class="primary-button">Baixar mapa de São Paulo</button>
+    </section>
     <section aria-labelledby="projectsTitle"><div class="section-heading"><h1 id="projectsTitle">Meus projetos <span id="projectTotal" class="project-total">–</span></h1></div><p id="launcherStatus" role="status">Carregando seus projetos…</p><div id="projectGrid" class="project-grid"></div></section>
     <button id="newProject" class="primary-button new-project-button" type="button"><span aria-hidden="true">＋</span> Novo projeto</button>
     <button id="importProjectButton" class="secondary-button import-project-button" type="button">Importar projeto</button><input id="importProjectFile" type="file" accept=".json,application/json" hidden>

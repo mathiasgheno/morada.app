@@ -3,12 +3,23 @@
   "configVersion": 1,
   "workspaces": {
     "": {
+      "dependencies": {
+        "leaflet": "1.9.4",
+        "playwright": "^1.65.1",
+        "protomaps-leaflet": "5.0.0",
+      },
       "devDependencies": {
         "@tauri-apps/cli": "^2.12.6",
       },
     },
   },
   "packages": {
+    "@mapbox/point-geometry": ["@mapbox/point-geometry@1.1.0", "", {}, "sha512-YGcBz1cg4ATXDCM/71L9xveh4dynfGmcLDqufR+nQQy3fKwsAZsWd/x4621/6uJaeB9mwOHE6hPeDgXz9uViUQ=="],
+
+    "@mapbox/vector-tile": ["@mapbox/vector-tile@2.0.5", "", { "dependencies": { "@mapbox/point-geometry": "~1.1.0", "@types/geojson": "^7946.0.16", "pbf": "^4.0.2" } }, "sha512-pXj8m7KTsqZt+1jsE0xIpGvqTSbblfkuEJL/NJmNePMtEwxO8V3XMDo9WMSfDeqHvCtBI9Lmt4mGcGR10zecmw=="],
+
+    "@protomaps/basemaps": ["@protomaps/basemaps@5.7.2", "", { "bin": { "generate_style": "src/cli.ts" } }, "sha512-K1Yk6bWdULulYg+R2QRVXx4NzJZan5YQhpejEG0c1/sXruJrfPIPZuakpf3jwAgVmjIRVQwAv+yRafDeN0aaUQ=="],
+
     "@tauri-apps/cli": ["@tauri-apps/cli@2.12.6", "", { "optionalDependencies": { "@tauri-apps/cli-darwin-arm64": "2.12.6", "@tauri-apps/cli-darwin-x64": "2.12.6", "@tauri-apps/cli-linux-arm-gnueabihf": "2.12.6", "@tauri-apps/cli-linux-arm64-gnu": "2.12.6", "@tauri-apps/cli-linux-arm64-musl": "2.12.6", "@tauri-apps/cli-linux-riscv64-gnu": "2.12.6", "@tauri-apps/cli-linux-x64-gnu": "2.12.6", "@tauri-apps/cli-linux-x64-musl": "2.12.6", "@tauri-apps/cli-win32-arm64-msvc": "2.12.6", "@tauri-apps/cli-win32-ia32-msvc": "2.12.6", "@tauri-apps/cli-win32-x64-msvc": "2.12.6" }, "bin": { "tauri": "tauri.js" } }, "sha512-/cOeQgqq8PBDPODOjjT0YHs4qxKCHcQMWMiBm4rLM3JNr9mZE+PHNKOK4zAkhIUtYMNL/0fweW48VNvzD1AbqA=="],
 
     "@tauri-apps/cli-darwin-arm64": ["@tauri-apps/cli-darwin-arm64@2.12.6", "", { "os": "darwin", "cpu": "arm64" }, "sha512-Uokwk1hFfJoG54+kD8iU0St33jAIkNvojnjEfBZ6UbL5rnM10AiFwUS/2DHTJ9R4/Kba4U44v7djfMuWFTQgeg=="],
@@ -32,5 +43,39 @@
     "@tauri-apps/cli-win32-ia32-msvc": ["@tauri-apps/cli-win32-ia32-msvc@2.12.6", "", { "os": "win32", "cpu": "ia32" }, "sha512-9q9ZFNuFreBczwyJuhhlrEOBzGClwWUYirQ2GBl66Y6EaNl17IdLH8TRqoY9wYB1LnctNBi+Fa/WMGtFA4BtFQ=="],
 
     "@tauri-apps/cli-win32-x64-msvc": ["@tauri-apps/cli-win32-x64-msvc@2.12.6", "", { "os": "win32", "cpu": "x64" }, "sha512-ion7Chbj21ROxMRpjQ7G8rz5sIOaI7IoBQum1oq5sl1V5zGWyc/oYnCrQhVqO2TxK/lBDWxt648BzLi02SY3Xg=="],
+
+    "@types/css-font-loading-module": ["@types/css-font-loading-module@0.0.7", "", {}, "sha512-nl09VhutdjINdWyXxHWN/w9zlNCfr60JUqJbd24YXUuCwgeL0TpFSdElCwb6cxfB6ybE19Gjj4g0jsgkXxKv1Q=="],
+
+    "@types/geojson": ["@types/geojson@7946.0.16", "", {}, "sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg=="],
+
+    "@types/leaflet": ["@types/leaflet@1.9.22", "", { "dependencies": { "@types/geojson": "*" } }, "sha512-h3lhECYEKDasG7LFHu+GiHqAvsgLuQvlJvVZzJDGONo3sEL+wUOqSFLnwkZlK0qVxnxbuGFW8iBlJNYs5wgndA=="],
+
+    "@types/rbush": ["@types/rbush@3.0.4", "", {}, "sha512-knSt9cCW8jj1ZSFcFeBZaX++OucmfPxxHiRwTahZfJlnQsek7O0bazTJHWD2RVj9LEoejUYF2de3/stf+QXcXw=="],
+
+    "color2k": ["color2k@2.2.0", "", {}, "sha512-n+jb2Ss/1jXE9u4YDfR2Tk8SqVr9FcA14qpVw8oBBxZqnUzsN3yvGmyvHaw5z5VRvLpL5Ab8+CNjJjIStth3KQ=="],
+
+    "fflate": ["fflate@0.8.3", "", {}, "sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA=="],
+
+    "leaflet": ["leaflet@1.9.4", "", {}, "sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA=="],
+
+    "pbf": ["pbf@4.0.2", "", { "dependencies": { "resolve-protobuf-schema": "^2.1.0" }, "bin": { "pbf": "bin/pbf" } }, "sha512-J0ajxARhZfpUEebxYs1vhMGMuLSXtBe1e+fFPDrf2uA2hgo+UshKfNUWOz92HJNz6/NFEXseQPddnHkTreWRqg=="],
+
+    "playwright": ["playwright@1.65.1", "", { "dependencies": { "playwright-core": "1.65.1" }, "bin": { "playwright": "cli.js" } }, "sha512-vJ1FuoOrNwOKHUIVEvSt3jT1L+wjjDpwhwIstKtfvTh8XIG4FG4bIFuvNdMxi81LGfAhUgUZleVFaOLY4RIUUw=="],
+
+    "playwright-core": ["playwright-core@1.65.1", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-hqPpz7blSMPxWVdoeE1yiBSzXsKiVOd2k+kjCvmUywD2GPO2Dd9HfcWnq9NN0GHbNZDFgZ9JfBFr+X5/BLo0qw=="],
+
+    "pmtiles": ["pmtiles@3.2.1", "", { "dependencies": { "@types/leaflet": "^1.9.8", "fflate": "^0.8.0" } }, "sha512-3R4fBwwoli5mw7a6t1IGwOtfmcSAODq6Okz0zkXhS1zi9sz1ssjjIfslwPvcWw5TNhdjNBUg9fgfPLeqZlH6ng=="],
+
+    "potpack": ["potpack@1.0.2", "", {}, "sha512-choctRBIV9EMT9WGAZHn3V7t0Z2pMQyl0EZE6pFc/6ml3ssw7Dlf/oAOvFwjm1HVsqfQN8GfeFyJ+d8tRzqueQ=="],
+
+    "protocol-buffers-schema": ["protocol-buffers-schema@3.6.1", "", {}, "sha512-VG2K63Igkiv9p76tk1lilczEK1cT+kCjKtkdhw1dQZV3k3IXJbd3o6Ho8b9zJZaHSnT2hKe4I+ObmX9w6m5SmQ=="],
+
+    "protomaps-leaflet": ["protomaps-leaflet@5.0.0", "", { "dependencies": { "@mapbox/point-geometry": "^1.1.0", "@mapbox/vector-tile": "^2.0.2", "@protomaps/basemaps": "^5.0.0", "@types/css-font-loading-module": "^0.0.7", "@types/rbush": "^3.0.0", "color2k": "^2.0.3", "pbf": "^4.0.1", "pmtiles": "^3.0.7", "potpack": "^1.0.2", "rbush": "^3.0.1" } }, "sha512-abc/0wLIJFmgNhMhMRYHL4Lv9y3MgIJmJE4BldJ82p8L39f0rFRjwb9W7J9D03UR9tcbxXeb8Nqy08JjBTXveQ=="],
+
+    "quickselect": ["quickselect@2.0.0", "", {}, "sha512-RKJ22hX8mHe3Y6wH/N3wCM6BWtjaxIyyUIkpHOvfFnxdI4yD4tBXEBKSbriGujF6jnSVkJrffuo6vxACiSSxIw=="],
+
+    "rbush": ["rbush@3.0.1", "", { "dependencies": { "quickselect": "^2.0.0" } }, "sha512-XRaVO0YecOpEuIvbhbpTrZgoiI6xBlz6hnlr6EHhd+0x9ase6EmeN+hdwwUaJvLcsFFQ8iWVF1GAK1yB0BWi0w=="],
+
+    "resolve-protobuf-schema": ["resolve-protobuf-schema@2.1.0", "", { "dependencies": { "protocol-buffers-schema": "^3.3.1" } }, "sha512-kI5ffTiZWmJaS/huM8wZfEMer1eRd7oJQhDuxeCLe3t7N7mX3z94CN0xPxBQxFYQTSNz9T0i+v6inKqSdK8xrQ=="],
   }
 }
