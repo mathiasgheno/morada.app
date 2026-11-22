@@ -50,6 +50,15 @@ struct ThemeMenu {
     dark: CheckMenuItem<tauri::Wry>,
     system: CheckMenuItem<tauri::Wry>,
 }
+struct ThemePreference(Mutex<String>);
+
+fn theme_mode(app: &tauri::AppHandle) -> String {
+    app.try_state::<ThemePreference>().and_then(|state| state.0.lock().ok().map(|value| value.clone())).unwrap_or_else(|| "system".into())
+}
+
+fn theme_script(app: &tauri::AppHandle) -> String {
+    format!("window.__moradaThemeRequested = '{}';", theme_mode(app))
+}
 
 fn update_theme_menu(app: &tauri::AppHandle, mode: &str) -> Result<(), String> {
     let theme = match mode {
@@ -62,6 +71,17 @@ fn update_theme_menu(app: &tauri::AppHandle, mode: &str) -> Result<(), String> {
         menu.light.set_checked(mode == "light").map_err(|e| e.to_string())?;
         menu.dark.set_checked(mode == "dark").map_err(|e| e.to_string())?;
         menu.system.set_checked(mode == "system").map_err(|e| e.to_string())?;
+    }
+    if let Some(preference) = app.try_state::<ThemePreference>() {
+        let mut current = preference.0.lock().map_err(|e| e.to_string())?;
+        if *current != mode {
+            let directory = app.path().app_data_dir().map_err(|e| e.to_string())?;
+            std::fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
+            let temporary = directory.join(format!("theme-{}.tmp", std::process::id()));
+            std::fs::write(&temporary, mode).map_err(|e| e.to_string())?;
+            std::fs::rename(temporary, directory.join("theme.txt")).map_err(|e| e.to_string())?;
+            *current = mode.to_owned();
+        }
     }
     app.set_theme(theme);
     Ok(())
@@ -101,6 +121,7 @@ fn launcher_window(app: &tauri::AppHandle, new_project: bool) -> Result<tauri::W
     };
     let mut builder = WebviewWindowBuilder::from_config(app, &config)
         .map_err(|e| e.to_string())?;
+    builder = builder.initialization_script(theme_script(app));
     if new_project {
         builder = builder.initialization_script("window.__moradaNewProjectRequested = true;");
     }
@@ -132,6 +153,7 @@ async fn open_project(app: tauri::AppHandle, window: tauri::WebviewWindow, id: S
     url.set_fragment(None);
     let origin = url.origin();
     WebviewWindowBuilder::new(&app, label.clone(), WebviewUrl::External(url))
+        .initialization_script(theme_script(&app))
         .on_navigation(move |url| url.origin() == origin)
         .title(format!("{} · Morada", name))
         .inner_size(1440.0, 960.0)
@@ -160,13 +182,32 @@ fn main() {
         .manage(Mutex::new(String::from("main")))
         .invoke_handler(tauri::generate_handler![open_project, close_project, set_theme_mode, save_project_backup, open_walk_score])
         .setup(|app| {
+            let saved_theme = app.path().app_data_dir().ok()
+                .and_then(|path| std::fs::read_to_string(path.join("theme.txt")).ok())
+                .filter(|mode| matches!(mode.as_str(), "light" | "dark" | "system"))
+                .unwrap_or_else(|| "system".into());
+            app.manage(ThemePreference(Mutex::new(saved_theme.clone())));
             #[cfg(not(debug_assertions))]
             match runtime::start(app.handle()) {
-                Ok(runtime) => { app.manage(runtime); }
+                Ok(runtime) => {
+                    app.add_capability(tauri::ipc::CapabilityBuilder::new("desktop-session")
+                        .local(false).remote(format!("{}*", runtime.origin))
+                        .window("main").window("project-*")
+                        .permission("allow-open-project").permission("allow-close-project")
+                        .permission("allow-set-theme-mode").permission("allow-save-project-backup")
+                        .permission("allow-open-walk-score"))?;
+                    app.manage(runtime);
+                }
                 Err(error) => {
+                    if let Ok(directory) = app.path().app_data_dir() {
+                        if let Ok(mut log) = std::fs::OpenOptions::new().create(true).append(true).open(directory.join("servidor.log")) {
+                            let _ = writeln!(log, "Inicialização: {error}");
+                        }
+                    }
+                    let handle = app.handle().clone();
                     app.dialog().message(error.to_string()).title("Não foi possível iniciar o Morada")
-                        .kind(tauri_plugin_dialog::MessageDialogKind::Error).blocking_show();
-                    return Err(error.into());
+                        .kind(tauri_plugin_dialog::MessageDialogKind::Error).show(move |_| handle.exit(1));
+                    return Ok(());
                 }
             }
             // Mantém os menus nativos de edição e gerenciamento das janelas.
@@ -233,6 +274,7 @@ fn main() {
             app.manage(ExportProjectItem(export_project));
             app.set_menu(menu)?;
             app.manage(add_property);
+            update_theme_menu(app.handle(), &saved_theme).map_err(std::io::Error::other)?;
             #[cfg(not(debug_assertions))]
             launcher_window(app.handle(), false).map_err(std::io::Error::other)?;
             Ok(())

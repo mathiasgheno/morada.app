@@ -1,4 +1,4 @@
-use std::{fs, io::{self, BufRead, BufReader}, process::{Child, Command, Stdio}, sync::{mpsc, Mutex}, time::Duration};
+use std::{fs, io::{self, BufRead, BufReader, Write}, process::{Child, Command, Stdio}, sync::{mpsc, Mutex}, time::Duration};
 use tauri::Manager;
 
 pub struct LocalRuntime {
@@ -22,8 +22,9 @@ pub fn start(app: &tauri::AppHandle) -> io::Result<LocalRuntime> {
     let binary = std::env::current_exe()?.with_file_name(if cfg!(windows) { "morada-runtime.exe" } else { "morada-runtime" });
     let log_path = data.join("servidor.log");
     let log = fs::OpenOptions::new().create(true).append(true).open(&log_path)?;
+    let mut stdout_log = log.try_clone()?;
     let session = uuid::Uuid::new_v4().simple().to_string();
-    let mut command = Command::new(binary);
+    let mut command = Command::new(&binary);
     command.arg("--no-install").arg(resources.join("server.ts"))
         .current_dir(&data)
         .env("PORT", "0")
@@ -37,16 +38,17 @@ pub fn start(app: &tauri::AppHandle) -> io::Result<LocalRuntime> {
         use std::os::windows::process::CommandExt;
         command.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
-    let mut child = command.spawn()?;
+    let mut child = command.spawn().map_err(|error| io::Error::other(format!("Não foi possível abrir {}: {error}. O Morada precisa iniciar seu servidor HTTP local.", binary.display())))?;
     let stdout = child.stdout.take().ok_or_else(|| io::Error::other("Saída do servidor indisponível"))?;
     let (sender, receiver) = mpsc::channel();
     std::thread::spawn(move || {
         for line in BufReader::new(stdout).lines().map_while(Result::ok) {
+            let _ = writeln!(stdout_log, "{line}");
             if let Some(url) = line.strip_prefix("MORADA_READY ") { let _ = sender.send(url.to_owned()); }
         }
     });
     let ready = receiver.recv_timeout(Duration::from_secs(25))
-        .map_err(|_| io::Error::other(format!("Não foi possível iniciar o servidor HTTP local. O Morada precisa desse serviço para funcionar. Consulte {}", log_path.display())))
+        .map_err(|_| io::Error::other(format!("Não foi possível iniciar o servidor HTTP local (processo: {:?}). O Morada precisa desse serviço para funcionar. Consulte {}", child.try_wait().ok().flatten(), log_path.display())))
         .and_then(|value| {
             let url = tauri::Url::parse(&value).map_err(io::Error::other)?;
             if url.scheme() != "http" || url.host_str() != Some("127.0.0.1") || url.port().is_none() {

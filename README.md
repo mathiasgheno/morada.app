@@ -14,9 +14,11 @@ Pastas de dados do aplicativo instalado:
 - Windows: `%APPDATA%\app.morada.desktop\`;
 - Linux: `$XDG_DATA_HOME/app.morada.desktop/` (normalmente `~/.local/share/app.morada.desktop/`).
 
-As pastas contêm `projetos/` e `recursos/`. O modo `desktop:dev` continua usando os projetos locais do repositório, com identidade de WebView separada (`app.morada.desktop.dev`).
+As pastas contêm `projetos/` e `recursos/`. A preferência de tema fica em `theme.txt`, independente da porta HTTP escolhida a cada abertura. O modo `desktop:dev` continua usando os projetos locais do repositório, com identidade de WebView separada (`app.morada.desktop.dev`).
 
-A pipeline `.github/workflows/desktop-builds.yml` roda automaticamente nos pushes desta branch. Também define builds manuais por plataforma; o botão de execução manual passa a ficar disponível quando o workflow estiver na branch padrão do GitHub. Valida testes e gera DMGs para Apple Silicon/Intel, NSIS para Windows x64 e AppImage/DEB para Linux x64/ARM64. Os pacotes ficam como artefatos por 14 dias; não há publicação automática de release. Cada variante testa o runtime e a persistência em diretório temporário; no macOS, testa também o Bun já assinado dentro do `.app`. `bun desktop/smoke.mjs` executa essa validação após a preparação.
+A pipeline `.github/workflows/desktop-builds.yml` roda automaticamente nos pushes desta branch. Também define builds manuais por plataforma; o botão de execução manual passa a ficar disponível quando o workflow estiver na branch padrão do GitHub. Valida testes e gera DMGs para Apple Silicon/Intel, NSIS para Windows x64 e AppImage/DEB para Linux x64 e DEB para Linux ARM64. O AppImage ARM64 fica fora desta primeira matriz por falha do linuxdeploy ao inspecionar o runtime; nessa arquitetura é gerado o DEB. Os pacotes ficam como artefatos por 14 dias; não há publicação automática de release. Cada variante testa o runtime e a persistência em diretório temporário; no macOS, testa também o Bun já assinado dentro do `.app`. `bun desktop/smoke.mjs` executa essa validação após a preparação.
+
+No macOS, teste o aplicativo pelo DMG ou a partir de uma pasta de aplicativos, fora de `Documents`. O controle de acesso do macOS pode impedir que o runtime leia os próprios recursos quando o bundle está dentro de uma pasta protegida.
 
 Estes são pacotes de teste: o macOS recebe assinatura ad hoc, sem notarização Apple, e o Windows ainda não usa Authenticode. Assinatura de distribuição, atualizações automáticas e release pública serão etapas posteriores.
 

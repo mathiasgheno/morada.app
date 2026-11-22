@@ -4,5 +4,5 @@
   "description": "Janelas locais do launcher e dos projetos Morada.",
   "windows": ["main", "project-*"],
   "remote": { "urls": ["http://localhost:1420/*", "http://127.0.0.1:1420/*"] },
-  "permissions": []
+  "permissions": ["allow-open-project", "allow-close-project", "allow-set-theme-mode", "allow-save-project-backup", "allow-open-walk-score"]
 }
